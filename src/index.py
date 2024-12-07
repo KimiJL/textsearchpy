@@ -42,11 +42,11 @@ class Index:
                     self.inverted_index[tok].append(doc.id)
                 else:
                     self.inverted_index[tok] = [doc.id]
-    
+
     def _normalize_tokens(self, tokens: List[str]):
         if not self.token_normalizers:
             return tokens
-    
+
         for normalizer in self.token_normalizers:
             tokens = normalizer.normalize(tokens)
 
