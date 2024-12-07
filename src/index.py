@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 import re
 import uuid
+from src.normalizers import TokenNormalizer, LowerCaseNormalizer
 
 
 class Document(BaseModel):
@@ -25,7 +26,7 @@ def tokenize(text: str) -> List[str]:
 
 class Index:
     def __init__(self):
-        self.token_analyzers: List = None
+        self.token_normalizers: List[TokenNormalizer] = [LowerCaseNormalizer()]
         self.inverted_index: Dict[str, List[str]] = {}
         self.documents: Dict[str:Document] = {}
 
@@ -41,11 +42,20 @@ class Index:
                     self.inverted_index[tok].append(doc.id)
                 else:
                     self.inverted_index[tok] = [doc.id]
+    
+    def _normalize_tokens(self, tokens: List[str]):
+        if not self.token_normalizers:
+            return tokens
+    
+        for normalizer in self.token_normalizers:
+            tokens = normalizer.normalize(tokens)
+
+        return tokens
 
     def append(self, docs: List[Document]):
         for doc in docs:
             tokens = tokenize(doc.text)
-            # TODO add token analyzers here
+            tokens = self._normalize_tokens(tokens)
             doc_id = uuid.uuid4()
             doc.id = doc_id
             doc._index_tokens = tokens
@@ -55,6 +65,13 @@ class Index:
         # expand logic as we go
         if query not in self.inverted_index:
             return []
+
+        # assume query is single token currently, and needs to run same normalization
+        query = self._normalize_tokens([query])
+        # if query token is removed, consider as no match
+        if len(query) == 0:
+            return []
+        query = query[0]
 
         doc_ids = self.inverted_index[query]
 
