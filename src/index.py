@@ -28,7 +28,7 @@ class Index:
     def __init__(self):
         self.token_normalizers: List[TokenNormalizer] = [LowerCaseNormalizer()]
         self.inverted_index: Dict[str, List[str]] = {}
-        self.documents: Dict[str:Document] = {}
+        self.documents: Dict[str, Document] = {}
 
     def _add_to_index(self, doc: Document):
         if doc.id is None:
