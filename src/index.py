@@ -53,8 +53,11 @@ class Index:
 
         return tokens
 
-    def append(self, docs: List[Document]):
+    def append(self, docs: List[Union[str, Document]]):
         for doc in docs:
+            if isinstance(doc, str):
+                doc = Document(text=doc)
+
             tokens = tokenize(doc.text)
             tokens = self._normalize_tokens(tokens)
             doc_id = uuid.uuid4()

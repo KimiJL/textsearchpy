@@ -60,6 +60,16 @@ def test_append_doc():
     assert len(index.inverted_index) == 12
 
 
+def test_append_doc_mixed_type():
+    index = Index()
+
+    doc1 = Document(text="abcd")
+    doc2 = "qwer"
+
+    index.append([doc1, doc2])
+    assert len(index.documents) == 2
+
+
 def test_search():
     index = Index()
 
