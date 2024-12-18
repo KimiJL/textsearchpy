@@ -28,8 +28,11 @@ def tokenize(text: str) -> List[str]:
 class Index:
     def __init__(self):
         self.token_normalizers: List[TokenNormalizer] = [LowerCaseNormalizer()]
+        # {token: doc_id}
         self.inverted_index: Dict[str, List[str]] = {}
         self.documents: Dict[str, Document] = {}
+        # {token: {doc_id: [token_index]}}
+        self.positional_index: Dict[str, Dict[str, List[int]]] = {}
 
     def _add_to_index(self, doc: Document):
         if doc.id is None:
@@ -38,11 +41,21 @@ class Index:
         self.documents[doc.id] = doc
 
         if doc._index_tokens:
-            for tok in doc._index_tokens:
+            for tok_i, tok in enumerate(doc._index_tokens):
+                # add to inverted index
                 if tok in self.inverted_index:
                     self.inverted_index[tok].append(doc.id)
                 else:
                     self.inverted_index[tok] = [doc.id]
+
+                # add to positional index
+                if tok not in self.positional_index:
+                    self.positional_index[tok] = {}
+
+                if doc.id in self.positional_index[tok]:
+                    self.positional_index[tok][doc.id].append(tok_i)
+                else:
+                    self.positional_index[tok][doc.id] = [tok_i]
 
     def _normalize_tokens(self, tokens: List[str]):
         if not self.token_normalizers:

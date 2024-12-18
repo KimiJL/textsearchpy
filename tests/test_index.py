@@ -70,6 +70,30 @@ def test_append_doc_mixed_type():
     assert len(index.documents) == 2
 
 
+def test_positional_index_append():
+    index = Index()
+
+    doc1 = Document(text="this book has a lot of words for a book")
+    doc2 = Document(text="can you give this book away for me")
+
+    index.append([doc1, doc2])
+
+    assert len(index.positional_index.keys()) == 13
+    assert len(index.positional_index["book"].keys()) == 2
+    assert len(index.positional_index["a"].keys()) == 1
+    assert len(index.positional_index["away"].keys()) == 1
+
+    # get the doc_id
+    doc1_id = list(index.positional_index["a"].keys())[0]
+    doc2_id = list(index.positional_index["away"].keys())[0]
+
+    assert index.documents[doc1_id].text == doc1.text
+    assert index.documents[doc2_id].text == doc2.text
+
+    assert index.positional_index["book"][doc1_id] == [1, 9]
+    assert index.positional_index["book"][doc2_id] == [4]
+
+
 def test_search():
     index = Index()
 
