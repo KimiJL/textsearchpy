@@ -18,3 +18,8 @@ class TermQuery(Query):
 # TODO think about if AND OR NOT should be separated to optimize for AND + OR avoidance (likely not necessary)
 class BooleanQuery(Query):
     clauses: List[Tuple[Query, str]]
+
+
+class PhraseQuery(Query):
+    terms: List[str]
+    distance: int

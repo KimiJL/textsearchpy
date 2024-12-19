@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import re
 import uuid
 from src.normalizers import TokenNormalizer, LowerCaseNormalizer
-from src.query import BooleanQuery, Query, TermQuery
+from src.query import BooleanQuery, PhraseQuery, Query, TermQuery
 
 
 class Document(BaseModel):
@@ -126,5 +126,61 @@ class Index:
 
             return self.inverted_index.get(query_term, [])
 
+        elif isinstance(query, PhraseQuery):
+            # assume two terms for now
+            t1 = query.terms[0]
+            t2 = query.terms[1]
+            # +1 to mimic edit distance instead of word distance i.e. "word1 word2" should be edit distance of 0, but word distance of 1
+            distance = query.distance + 1
+
+            if t1 not in self.positional_index or t2 not in self.positional_index:
+                return []
+
+            p1 = self.positional_index[t1]
+            p2 = self.positional_index[t2]
+            doc_ids = self._positional_intersect(p1, p2, distance)
+            return doc_ids
         else:
             raise ValueError("Invalid Query type")
+
+    def _find_match_doc_ids(self, search_index, to_search_index):
+        match_doc_ids = []
+        for doc_id in search_index.keys():
+            if doc_id in to_search_index:
+                match_doc_ids.append(doc_id)
+        return match_doc_ids
+
+    def _positional_intersect(self, p1: Dict, p2: Dict, k: int):
+        result = set()
+
+        # iterate through the rarer term to find matching documents
+        if len(p1.keys()) >= len(p2.keys()):
+            doc_ids = self._find_match_doc_ids(p2, p1)
+        else:
+            doc_ids = self._find_match_doc_ids(p1, p2)
+
+        for doc_id in doc_ids:
+            temp = []
+            positions1 = p1[doc_id]
+            positions2 = p2[doc_id]
+
+            for pp1 in positions1:
+                for pp2 in positions2:
+                    if abs(pp1 - pp2) <= k:
+                        temp.append(pp2)
+                    elif pp2 > pp1:
+                        break
+
+                # this is here to allow saving of positions, should revisit in the future
+                # potentially could reduce extra processing if we don't need the matched token index
+                while len(temp) > 0 and abs(temp[0] - pp1) > k:
+                    temp.remove(temp[0])
+
+                for ps in temp:
+                    # for now just return doc_id for simplicity
+                    # result.append((doc_id, pp1, ps))
+                    result.add(doc_id)
+
+        # should revisit to clean up algo so maybe we don't need to construct set to list here
+        # needed currently because matched doc_id can duplicate
+        return list(result)
