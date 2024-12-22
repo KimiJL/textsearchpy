@@ -203,3 +203,28 @@ def test_phrase_query():
     q = PhraseQuery(terms=["we", "cookie"], distance=0)
     docs = index.search(q)
     assert len(docs) == 0
+
+
+def test_string_query():
+    index = Index()
+    doc1 = Document(text="i like cake, but do we like this specific cake")
+    doc2 = Document(text="you like cookie")
+    doc3 = Document(text="we like cake")
+    doc4 = Document(text="we should have a tea party")
+    index.append([doc1, doc2, doc3, doc4])
+
+    q = "tea"
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = "cake cookie"
+    docs = index.search(q)
+    assert len(docs) == 3
+
+    q = "cake AND specific"
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = "cake NOT like"
+    docs = index.search(q)
+    assert len(docs) == 0

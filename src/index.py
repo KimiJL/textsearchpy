@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import re
 import uuid
 from src.normalizers import TokenNormalizer, LowerCaseNormalizer
-from src.query import BooleanQuery, PhraseQuery, Query, TermQuery
+from src.query import BooleanQuery, PhraseQuery, Query, TermQuery, parse_query
 
 
 class Document(BaseModel):
@@ -79,9 +79,8 @@ class Index:
             self._add_to_index(doc)
 
     def search(self, query: Union[Query, str]) -> List[Document]:
-        # TODO expand to query parser in future
         if isinstance(query, str):
-            query = TermQuery(term=query)
+            query = parse_query(query)
 
         doc_ids = self._eval_query(query)
 
