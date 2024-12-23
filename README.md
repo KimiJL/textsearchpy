@@ -1,2 +1,2 @@
-# pytextsearch
-In memory text search index in python
+# Pytextsearch
+Pytextsearch is a high performance, easy to use, in-memory text search engine library written in Python.
