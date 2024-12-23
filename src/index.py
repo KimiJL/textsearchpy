@@ -34,6 +34,9 @@ class Index:
         # {token: {doc_id: [token_index]}}
         self.positional_index: Dict[str, Dict[str, List[int]]] = {}
 
+    def __len__(self):
+        return len(self.documents)
+
     def _add_to_index(self, doc: Document):
         if doc.id is None:
             raise ValueError("Document ID cannot be None")

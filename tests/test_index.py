@@ -248,3 +248,14 @@ def test_string_query():
     q = "cake NOT like"
     docs = index.search(q)
     assert len(docs) == 0
+
+
+def test_index_length():
+    index = Index()
+    assert len(index) == 0
+
+    doc1 = Document(text="you like cookie")
+    doc2 = Document(text="we like cake")
+    index.append([doc1, doc2])
+
+    assert len(index) == 2
