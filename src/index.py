@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import re
 import uuid
 from src.normalizers import TokenNormalizer, LowerCaseNormalizer
-from src.query import BooleanQuery, PhraseQuery, Query, TermQuery, parse_query
+from src.query import BooleanQuery, Clause, PhraseQuery, Query, TermQuery, parse_query
 
 
 class Document(BaseModel):
@@ -95,19 +95,19 @@ class Index:
             not_set = set()
 
             for clause in query.clauses:
-                query = clause[0]
-                query_condition = clause[1]
+                query = clause.query
+                query_condition = clause.clause
 
                 doc_ids = self._eval_query(query)
 
-                if query_condition == "MUST":
+                if query_condition == Clause.MUST:
                     if and_set is None:
                         and_set = set(doc_ids)
                     else:
                         and_set = and_set.intersection(set(doc_ids))
-                elif query_condition == "SHOULD":
+                elif query_condition == Clause.SHOULD:
                     or_set.update(doc_ids)
-                elif query_condition == "MUST_NOT":
+                elif query_condition == Clause.MUST_NOT:
                     not_set.update(doc_ids)
 
             # if ANDs exists ORs are ignored

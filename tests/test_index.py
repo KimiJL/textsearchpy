@@ -1,5 +1,5 @@
 from src.index import tokenize, Document, Index
-from src.query import BooleanQuery, PhraseQuery, TermQuery
+from src.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 
 
 def test_tokenize():
@@ -147,25 +147,45 @@ def test_boolean_search():
 
     q1 = TermQuery(term="cookie")
     q2 = TermQuery(term="cake")
-    q = BooleanQuery(clauses=[(q1, "SHOULD"), (q2, "SHOULD")])
+    q = BooleanQuery(
+        clauses=[
+            BooleanClause(query=q1, clause="SHOULD"),
+            BooleanClause(query=q2, clause="SHOULD"),
+        ]
+    )
     docs = index.search(q)
     assert len(docs) == 3
 
     q1 = TermQuery(term="like")
     q2 = TermQuery(term="we")
-    q = BooleanQuery(clauses=[(q1, "MUST"), (q2, "MUST")])
+    q = BooleanQuery(
+        clauses=[
+            BooleanClause(query=q1, clause="MUST"),
+            BooleanClause(query=q2, clause="MUST"),
+        ]
+    )
     docs = index.search(q)
     assert len(docs) == 1
 
     q1 = TermQuery(term="cake")
     q2 = TermQuery(term="like")
-    q = BooleanQuery(clauses=[(q1, "MUST_NOT"), (q2, "SHOULD")])
+    q = BooleanQuery(
+        clauses=[
+            BooleanClause(query=q1, clause="MUST_NOT"),
+            BooleanClause(query=q2, clause="SHOULD"),
+        ]
+    )
     docs = index.search(q)
     assert len(docs) == 1
 
     q1 = TermQuery(term="cake")
     q2 = TermQuery(term="cookie")
-    q = BooleanQuery(clauses=[(q1, "MUST"), (q2, "SHOULD")])
+    q = BooleanQuery(
+        clauses=[
+            BooleanClause(query=q1, clause="MUST"),
+            BooleanClause(query=q2, clause="SHOULD"),
+        ]
+    )
     docs = index.search(q)
     assert len(docs) == 2
 

@@ -13,34 +13,34 @@ def test_basic_boolean_query():
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
     assert len(q.clauses) == 2
-    assert isinstance(q.clauses[0][0], TermQuery)
-    assert q.clauses[0][0].term == "word"
-    assert q.clauses[0][1] == "SHOULD"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][0].term == "search"
-    assert q.clauses[1][1] == "SHOULD"
+    assert isinstance(q.clauses[0].query, TermQuery)
+    assert q.clauses[0].query.term == "word"
+    assert q.clauses[0].clause == "SHOULD"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].query.term == "search"
+    assert q.clauses[1].clause == "SHOULD"
 
     query = "word AND search"
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
     assert len(q.clauses) == 2
-    assert isinstance(q.clauses[0][0], TermQuery)
-    assert q.clauses[0][0].term == "word"
-    assert q.clauses[0][1] == "MUST"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][0].term == "search"
-    assert q.clauses[1][1] == "MUST"
+    assert isinstance(q.clauses[0].query, TermQuery)
+    assert q.clauses[0].query.term == "word"
+    assert q.clauses[0].clause == "MUST"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].query.term == "search"
+    assert q.clauses[1].clause == "MUST"
 
     query = "word NOT search"
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
     assert len(q.clauses) == 2
-    assert isinstance(q.clauses[0][0], TermQuery)
-    assert q.clauses[0][0].term == "word"
-    assert q.clauses[0][1] == "SHOULD"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][0].term == "search"
-    assert q.clauses[1][1] == "MUST_NOT"
+    assert isinstance(q.clauses[0].query, TermQuery)
+    assert q.clauses[0].query.term == "word"
+    assert q.clauses[0].clause == "SHOULD"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].query.term == "search"
+    assert q.clauses[1].clause == "MUST_NOT"
 
 
 def test_compound_boolean_query():
@@ -48,29 +48,29 @@ def test_compound_boolean_query():
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
     assert len(q.clauses) == 3
-    assert isinstance(q.clauses[0][0], TermQuery)
-    assert q.clauses[0][0].term == "word"
-    assert q.clauses[0][1] == "MUST"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][0].term == "search"
-    assert q.clauses[1][1] == "MUST"
-    assert isinstance(q.clauses[2][0], TermQuery)
-    assert q.clauses[2][0].term == "found"
-    assert q.clauses[2][1] == "MUST_NOT"
+    assert isinstance(q.clauses[0].query, TermQuery)
+    assert q.clauses[0].query.term == "word"
+    assert q.clauses[0].clause == "MUST"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].query.term == "search"
+    assert q.clauses[1].clause == "MUST"
+    assert isinstance(q.clauses[2].query, TermQuery)
+    assert q.clauses[2].query.term == "found"
+    assert q.clauses[2].clause == "MUST_NOT"
 
     query = "word OR search NOT found"
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
     assert len(q.clauses) == 3
-    assert isinstance(q.clauses[0][0], TermQuery)
-    assert q.clauses[0][0].term == "word"
-    assert q.clauses[0][1] == "SHOULD"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][0].term == "search"
-    assert q.clauses[1][1] == "SHOULD"
-    assert isinstance(q.clauses[2][0], TermQuery)
-    assert q.clauses[2][0].term == "found"
-    assert q.clauses[2][1] == "MUST_NOT"
+    assert isinstance(q.clauses[0].query, TermQuery)
+    assert q.clauses[0].query.term == "word"
+    assert q.clauses[0].clause == "SHOULD"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].query.term == "search"
+    assert q.clauses[1].clause == "SHOULD"
+    assert isinstance(q.clauses[2].query, TermQuery)
+    assert q.clauses[2].query.term == "found"
+    assert q.clauses[2].clause == "MUST_NOT"
 
 
 def test_basic_phrase_query():
@@ -91,13 +91,13 @@ def test_basic_group_query():
     query = "(group word) AND search"
     q = parse_query(query)
     assert isinstance(q, BooleanQuery)
-    assert isinstance(q.clauses[0][0], BooleanQuery)
-    assert q.clauses[0][1] == "MUST"
-    assert isinstance(q.clauses[1][0], TermQuery)
-    assert q.clauses[1][1] == "MUST"
+    assert isinstance(q.clauses[0].query, BooleanQuery)
+    assert q.clauses[0].clause == "MUST"
+    assert isinstance(q.clauses[1].query, TermQuery)
+    assert q.clauses[1].clause == "MUST"
 
-    sub_q = q.clauses[0][0]
-    assert isinstance(sub_q.clauses[1][0], TermQuery)
-    assert sub_q.clauses[0][1] == "SHOULD"
-    assert isinstance(sub_q.clauses[1][0], TermQuery)
-    assert sub_q.clauses[1][1] == "SHOULD"
+    sub_q = q.clauses[0].query
+    assert isinstance(sub_q.clauses[1].query, TermQuery)
+    assert sub_q.clauses[0].clause == "SHOULD"
+    assert isinstance(sub_q.clauses[1].query, TermQuery)
+    assert sub_q.clauses[1].clause == "SHOULD"

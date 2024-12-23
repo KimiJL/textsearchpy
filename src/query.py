@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import List, Tuple
+from enum import Enum
+from typing import List
 from pydantic import BaseModel
 
 # for now support TermQuery, PhraseQuery, BooleanQuery
@@ -14,10 +15,19 @@ class TermQuery(Query):
     term: str
 
 
-# TODO the str for AND OR NOT should be a enum
-# TODO think about if AND OR NOT should be separated to optimize for AND + OR avoidance (likely not necessary)
+class Clause(str, Enum):
+    SHOULD = "SHOULD"
+    MUST = "MUST"
+    MUST_NOT = "MUST_NOT"
+
+
+class BooleanClause(BaseModel):
+    query: Query
+    clause: Clause
+
+
 class BooleanQuery(Query):
-    clauses: List[Tuple[Query, str]]
+    clauses: List[BooleanClause]
 
 
 class PhraseQuery(Query):
@@ -65,7 +75,7 @@ def _parse_group_q(tokens: List[str]) -> Query:
         return left
 
     query_clauses = []
-    query_clauses.append((left, "SHOULD"))
+    query_clauses.append(BooleanClause(query=left, clause=Clause.SHOULD))
     while tokens and tokens[0] != ")":
         op_type = None
         if tokens[0] in ["AND", "OR", "NOT"]:
@@ -77,14 +87,16 @@ def _parse_group_q(tokens: List[str]) -> Query:
         right = _parse_base_q(tokens)
 
         if op_type == "OR":
-            query_clauses.append((right, "SHOULD"))
+            query_clauses.append(BooleanClause(query=right, clause=Clause.SHOULD))
         elif op_type == "NOT":
-            query_clauses.append((right, "MUST_NOT"))
+            query_clauses.append(BooleanClause(query=right, clause=Clause.MUST_NOT))
         elif op_type == "AND":
             # in cases of "word1 AND word2" word1 should also become MUST conditions
-            if query_clauses[-1][1] == "SHOULD":
-                query_clauses[-1] = (query_clauses[-1][0], "MUST")
-            query_clauses.append((right, "MUST"))
+            if query_clauses[-1].clause == Clause.SHOULD:
+                query_clauses[-1] = BooleanClause(
+                    query=query_clauses[-1].query, clause=Clause.MUST
+                )
+            query_clauses.append(BooleanClause(query=right, clause=Clause.MUST))
 
     return BooleanQuery(clauses=query_clauses)
 
