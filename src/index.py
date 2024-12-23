@@ -168,7 +168,9 @@ class Index:
 
             for pp1 in positions1:
                 for pp2 in positions2:
-                    if abs(pp1 - pp2) <= k:
+                    dis = abs(pp1 - pp2)
+                    # != 0 checks the token is not on the same position i.e. "word word" would match doc="word"
+                    if dis <= k and dis != 0:
                         temp.append(pp2)
                     elif pp2 > pp1:
                         break

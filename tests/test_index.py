@@ -225,6 +225,21 @@ def test_phrase_query():
     assert len(docs) == 0
 
 
+def test_phrase_query_with_same_word():
+    index = Index()
+    doc = Document(text="you like cookie")
+    index.append([doc])
+    # should not match because there is not two like tokens
+    q = PhraseQuery(terms=["like", "like"], distance=0)
+    docs = index.search(q)
+    assert len(docs) == 0
+
+    doc2 = Document(text="you like like cookie")
+    index.append([doc2])
+    docs = index.search(q)
+    assert len(docs) == 1
+
+
 def test_string_query():
     index = Index()
     doc1 = Document(text="i like cake, but do we like this specific cake")
