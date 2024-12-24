@@ -134,13 +134,14 @@ class Index:
             t2 = query.terms[1]
             # +1 to mimic edit distance instead of word distance i.e. "word1 word2" should be edit distance of 0, but word distance of 1
             distance = query.distance + 1
+            ordered = query.ordered
 
             if t1 not in self.positional_index or t2 not in self.positional_index:
                 return []
 
             p1 = self.positional_index[t1]
             p2 = self.positional_index[t2]
-            doc_ids = self._positional_intersect(p1, p2, distance)
+            doc_ids = self._positional_intersect(p1, p2, distance, ordered)
             return doc_ids
         else:
             raise ValueError("Invalid Query type")
@@ -152,7 +153,7 @@ class Index:
                 match_doc_ids.append(doc_id)
         return match_doc_ids
 
-    def _positional_intersect(self, p1: Dict, p2: Dict, k: int):
+    def _positional_intersect(self, p1: Dict, p2: Dict, k: int, ordered: bool):
         result = set()
 
         # iterate through the rarer term to find matching documents
@@ -168,6 +169,10 @@ class Index:
 
             for pp1 in positions1:
                 for pp2 in positions2:
+                    # if phrase search is order sensitive, skip when term two position is before term one
+                    if ordered and pp2 < pp1:
+                        continue
+
                     dis = abs(pp1 - pp2)
                     # != 0 checks the token is not on the same position i.e. "word word" would match doc="word"
                     if dis <= k and dis != 0:

@@ -240,6 +240,24 @@ def test_phrase_query_with_same_word():
     assert len(docs) == 1
 
 
+def test_phrase_query_ordered():
+    index = Index()
+    doc = Document(text="you like cookie")
+    index.append([doc])
+
+    q = PhraseQuery(terms=["cookie", "you"], distance=1, ordered=False)
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = PhraseQuery(terms=["cookie", "you"], distance=1, ordered=True)
+    docs = index.search(q)
+    assert len(docs) == 0
+
+    q = PhraseQuery(terms=["you", "cookie"], distance=1, ordered=True)
+    docs = index.search(q)
+    assert len(docs) == 1
+
+
 def test_string_query():
     index = Index()
     doc1 = Document(text="i like cake, but do we like this specific cake")

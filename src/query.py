@@ -33,6 +33,7 @@ class BooleanQuery(Query):
 class PhraseQuery(Query):
     terms: List[str]
     distance: int
+    ordered: bool = False
 
 
 class QueryParseError(Exception):
