@@ -9,6 +9,7 @@ from src.query import BooleanQuery, Clause, PhraseQuery, Query, TermQuery, parse
 class IndexSearchError(Exception):
     pass
 
+
 class Document(BaseModel):
     text: str
     # metadata
@@ -133,12 +134,14 @@ class Index:
 
         elif isinstance(query, PhraseQuery):
             terms = self._normalize_tokens(query.terms)
-            
+
             if len(terms) == 1:
                 # if phrase query is normalized to 1 term, treat it like a TermQuery
                 return self.inverted_index.get(query_term, [])
             elif len(terms) > 2:
-                raise IndexSearchError("PhraseQuery with more than two terms currently unsupported")
+                raise IndexSearchError(
+                    "PhraseQuery with more than two terms currently unsupported"
+                )
             elif len(terms) == 0:
                 return []
 
