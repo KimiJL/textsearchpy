@@ -6,6 +6,9 @@ from src.normalizers import TokenNormalizer, LowerCaseNormalizer
 from src.query import BooleanQuery, Clause, PhraseQuery, Query, TermQuery, parse_query
 
 
+class IndexSearchError(Exception):
+    pass
+
 class Document(BaseModel):
     text: str
     # metadata
@@ -129,9 +132,18 @@ class Index:
             return self.inverted_index.get(query_term, [])
 
         elif isinstance(query, PhraseQuery):
-            # assume two terms for now
-            t1 = query.terms[0]
-            t2 = query.terms[1]
+            terms = self._normalize_tokens(query.terms)
+            
+            if len(terms) == 1:
+                # if phrase query is normalized to 1 term, treat it like a TermQuery
+                return self.inverted_index.get(query_term, [])
+            elif len(terms) > 2:
+                raise IndexSearchError("PhraseQuery with more than two terms currently unsupported")
+            elif len(terms) == 0:
+                return []
+
+            t1 = terms[0]
+            t2 = terms[1]
             # +1 to mimic edit distance instead of word distance i.e. "word1 word2" should be edit distance of 0, but word distance of 1
             distance = query.distance + 1
             ordered = query.ordered
