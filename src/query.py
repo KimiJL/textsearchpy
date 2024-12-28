@@ -120,12 +120,13 @@ def _parse_base_q(tokens: List[str]):
         if len(tokens) < 3:
             raise QueryParseError("Malformed Phrase Query Discovered")
 
-        term1 = tokens.pop(0)
-        term2 = tokens.pop(0)
+        terms = []
+        while tokens and tokens[0] != '"':
+            terms.append(tokens.pop(0))
 
         if tokens[0] != '"':
             raise QueryParseError(
-                "Phrase Query only supports 2 terms and requires ending quote"
+                "Phrase Query detected with unterminated double quote"
             )
 
         tokens.pop(0)
@@ -141,7 +142,7 @@ def _parse_base_q(tokens: List[str]):
 
         distance = distance if distance else 0
 
-        return PhraseQuery(terms=[term1, term2], distance=distance)
+        return PhraseQuery(terms=terms, distance=distance)
 
     # term query
     else:

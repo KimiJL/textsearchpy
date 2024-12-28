@@ -87,6 +87,14 @@ def test_basic_phrase_query():
     assert q.distance == 5
 
 
+def test_multi_term_phrase_query():
+    query = '"multi word search"~3'
+    q = parse_query(query)
+    assert isinstance(q, PhraseQuery)
+    assert q.terms == ["multi", "word", "search"]
+    assert q.distance == 3
+
+
 def test_basic_group_query():
     query = "(group word) AND search"
     q = parse_query(query)
