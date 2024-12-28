@@ -258,6 +258,32 @@ def test_phrase_query_ordered():
     assert len(docs) == 1
 
 
+def test_multi_term_phrase_query():
+    index = Index()
+
+    doc1 = Document(text="i like cake, but do we like this specific cake")
+    doc2 = Document(text="you like cookie")
+    doc3 = Document(text="we like cake")
+    doc4 = Document(text="we should have a tea party")
+    index.append([doc1, doc2, doc3, doc4])
+
+    q = PhraseQuery(terms=["i", "like", "cake"], distance=0)
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = PhraseQuery(terms=["we", "like", "cake"], distance=0)
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = PhraseQuery(terms=["we", "like", "cake"], distance=1)
+    docs = index.search(q)
+    assert len(docs) == 1
+
+    q = PhraseQuery(terms=["we", "like", "cake"], distance=2)
+    docs = index.search(q)
+    assert len(docs) == 2
+
+
 def test_string_query():
     index = Index()
     doc1 = Document(text="i like cake, but do we like this specific cake")

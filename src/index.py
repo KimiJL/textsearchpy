@@ -138,25 +138,29 @@ class Index:
             if len(terms) == 1:
                 # if phrase query is normalized to 1 term, treat it like a TermQuery
                 return self.inverted_index.get(query_term, [])
-            elif len(terms) > 2:
-                raise IndexSearchError(
-                    "PhraseQuery with more than two terms currently unsupported"
-                )
             elif len(terms) == 0:
                 return []
 
-            t1 = terms[0]
-            t2 = terms[1]
             # +1 to mimic edit distance instead of word distance i.e. "word1 word2" should be edit distance of 0, but word distance of 1
             distance = query.distance + 1
             ordered = query.ordered
 
-            if t1 not in self.positional_index or t2 not in self.positional_index:
-                return []
+            postings = []
+            for term in terms:
+                if term not in self.positional_index:
+                    return []
+                postings.append(self.positional_index[term])
 
-            p1 = self.positional_index[t1]
-            p2 = self.positional_index[t2]
-            doc_ids = self._positional_intersect(p1, p2, distance, ordered)
+            doc_ids = []
+            if len(terms) == 2:
+                p1 = postings[0]
+                p2 = postings[1]
+                doc_ids = self._positional_intersect(p1, p2, distance, ordered)
+            elif len(terms) > 2:
+                doc_ids = self._multi_term_positional_intersect(
+                    postings, distance, ordered
+                )
+
             return doc_ids
         else:
             raise ValueError("Invalid Query type")
@@ -208,3 +212,62 @@ class Index:
         # should revisit to clean up algo so maybe we don't need to construct set to list here
         # needed currently because matched doc_id can duplicate
         return list(result)
+
+    def _multi_term_match_doc_ids(self, postings: List[Dict]):
+        # start from the smallest candidate list to reduce search time
+        sorted_postings = sorted(postings, key=lambda x: len(x.keys()))
+        candidate = list(sorted_postings[0].keys())
+
+        for posting in sorted_postings[1:]:
+            candidate = [c for c in candidate if c in posting]
+
+        return candidate
+
+    def _multi_term_positional_intersect(
+        self, postings: List[Dict], k: int, ordered: bool
+    ):
+        result_doc_ids = set()
+
+        doc_ids = self._multi_term_match_doc_ids(postings)
+
+        for doc_id in doc_ids:
+            positions1 = postings[0][doc_id]
+            positions2 = postings[1][doc_id]
+
+            for pp1 in positions1:
+                ranges = []
+                # initialize search ranges, similar to two term phrase query
+                for pp2 in positions2:
+                    if ordered and pp2 < pp1:
+                        continue
+
+                    dis = abs(pp1 - pp2)
+                    if dis <= k and dis != 0:
+                        ranges.append((min(pp1, pp2), max(pp1, pp2)))
+                    elif pp2 > pp1:
+                        break
+
+                for index, postings_k in enumerate(postings[2:]):
+                    temp = []
+                    positions_k = postings_k[doc_id]
+
+                    for r in ranges:
+                        for pp_k in positions_k:
+                            if ordered and pp_k < r[1]:
+                                continue
+
+                            low = min(r[0], pp_k)
+                            high = max(r[1], pp_k)
+                            # - 1 - index subtracts the word distance count for matching tokens
+                            # this way converts word distance into 'edit distance'
+                            dis = high - low - 1 - index
+                            if dis <= k and dis != 0:
+                                temp.append((min(r[0], pp_k), max(r[1], pp_k)))
+                            elif pp_k > r[1]:
+                                break
+                    ranges = temp
+
+                if len(ranges) > 0:
+                    result_doc_ids.add(doc_id)
+
+        return list(result_doc_ids)
