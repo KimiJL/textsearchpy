@@ -3,8 +3,6 @@ from enum import Enum
 from typing import List
 from pydantic import BaseModel
 
-# for now support TermQuery, PhraseQuery, BooleanQuery
-
 
 class Query(BaseModel, ABC):
     pass

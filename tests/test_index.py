@@ -1,10 +1,11 @@
-from src.index import tokenize, Document, Index
+from src.index import SimpleTokenizer, Document, Index
 from src.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 
 
 def test_tokenize():
     text = "Iteratively yield tokens as unicode strings, removing accent marks and optionally lowercasing the unidoce string by assigning True to one of the parameters, lowercase, to_lower, or lower."
-    tokens = tokenize(text)
+    tokenizer = SimpleTokenizer()
+    tokens = tokenizer.tokenize(text)
     assert tokens == [
         "Iteratively",
         "yield",
@@ -36,7 +37,7 @@ def test_tokenize():
     ]
 
     text = "Version 4.0 was released on October 12, 2012."
-    tokens = tokenize(text)
+    tokens = tokenizer.tokenize(text)
     assert tokens == ["Version", "was", "released", "on", "October"]
 
 

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 import re
@@ -17,21 +18,34 @@ class Document(BaseModel):
     _index_tokens: Optional[List[str]] = None
 
 
+class Tokenizer(ABC):
+    @abstractmethod
+    def tokenize(self, text: str) -> List[str]:
+        pass
+
+
+class SimpleTokenizer(Tokenizer):
+    def tokenize(self, text: str) -> List[str]:
+        tokens = []
+        for match in PAT_ALPHABETIC.finditer(text):
+            tokens.append(match.group())
+
+        return tokens
+
+
 # gensim simple_tokenize pattern
 PAT_ALPHABETIC = re.compile(r"(((?![\d])\w)+)", re.UNICODE)
 
 
-def tokenize(text: str) -> List[str]:
-    tokens = []
-    for match in PAT_ALPHABETIC.finditer(text):
-        tokens.append(match.group())
-
-    return tokens
-
-
 class Index:
-    def __init__(self):
-        self.token_normalizers: List[TokenNormalizer] = [LowerCaseNormalizer()]
+    def __init__(
+        self,
+        token_normalizers: List[TokenNormalizer] = [LowerCaseNormalizer()],
+        tokenizer: Tokenizer = SimpleTokenizer(),
+    ):
+        self.token_normalizers: List[TokenNormalizer] = token_normalizers
+        self.tokenizer: Tokenizer = tokenizer
+
         # {token: doc_id}
         self.inverted_index: Dict[str, List[str]] = {}
         self.documents: Dict[str, Document] = {}
@@ -78,7 +92,7 @@ class Index:
             if isinstance(doc, str):
                 doc = Document(text=doc)
 
-            tokens = tokenize(doc.text)
+            tokens = self.tokenizer.tokenize(doc.text)
             tokens = self._normalize_tokens(tokens)
             doc_id = uuid.uuid4()
             doc.id = doc_id
