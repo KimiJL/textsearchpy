@@ -1,3 +1,29 @@
+[project]
+name = "textsearchpy"
+version = "0.0.1"
+authors = [
+  { name="Kimi Li", email="kimi.jx.li@gmail.com" },
+]
+description = "In memory text search engine written in python"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Typing :: Typed",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/KimiJL/pytextsearch"
+Issues = "https://github.com/KimiJL/pytextsearch/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [

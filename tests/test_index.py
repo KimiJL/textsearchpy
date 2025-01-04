@@ -1,5 +1,5 @@
-from src.index import SimpleTokenizer, Document, Index
-from src.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
+from src.textsearchpy.index import SimpleTokenizer, Document, Index
+from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 
 
 def test_tokenize():

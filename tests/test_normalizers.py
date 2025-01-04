@@ -1,4 +1,4 @@
-from src.normalizers import LowerCaseNormalizer, StopwordsNormalizer
+from src.textsearchpy.normalizers import LowerCaseNormalizer, StopwordsNormalizer
 
 
 def test_lowercase_normalizer():

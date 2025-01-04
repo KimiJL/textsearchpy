@@ -1,4 +1,4 @@
-from src.query import BooleanQuery, PhraseQuery, TermQuery, parse_query
+from src.textsearchpy.query import BooleanQuery, PhraseQuery, TermQuery, parse_query
 
 
 def test_parse_term_query():

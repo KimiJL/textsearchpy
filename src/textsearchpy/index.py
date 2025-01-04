@@ -3,8 +3,15 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 import re
 import uuid
-from src.normalizers import TokenNormalizer, LowerCaseNormalizer
-from src.query import BooleanQuery, Clause, PhraseQuery, Query, TermQuery, parse_query
+from src.textsearchpy.normalizers import TokenNormalizer, LowerCaseNormalizer
+from src.textsearchpy.query import (
+    BooleanQuery,
+    Clause,
+    PhraseQuery,
+    Query,
+    TermQuery,
+    parse_query,
+)
 
 
 class IndexSearchError(Exception):
