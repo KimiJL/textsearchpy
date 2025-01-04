@@ -1,5 +1,5 @@
 from textsearchpy.index import Index
-from textsearchpy.query import TermQuery, BooleanQuery, BooleanClause
+from textsearchpy.query import TermQuery, BooleanQuery, BooleanClause, PhraseQuery
 from os import listdir
 from os.path import isfile, join
 import time
@@ -30,8 +30,8 @@ def run():
     print("Indexing Execution time:", elapsed_time, "seconds")
     print(f"Total Documents in Index: {len(index)}")
 
-    start = time.time()
     q = TermQuery(term="payout")
+    start = time.time()
     docs = index.search(q)
     end = time.time()
     elapsed_time = end - start
@@ -44,10 +44,23 @@ def run():
             BooleanClause(query=TermQuery(term="income"), clause="MUST"),
         ]
     )
+    start = time.time()
     docs = index.search(q)
     end = time.time()
     elapsed_time = end - start
     print("BooleanQuery 'payout AND income' Execution time:", elapsed_time, "seconds")
+    print(f"Total Documents Found {len(docs)}")
+
+    q = PhraseQuery(terms=["management", "acquisition"], distance=2, ordered=False)
+    start = time.time()
+    docs = index.search(q)
+    end = time.time()
+    elapsed_time = end - start
+    print(
+        "PhraseQuery 'management acquisition'~2 Execution time:",
+        elapsed_time,
+        "seconds",
+    )
     print(f"Total Documents Found {len(docs)}")
 
 
