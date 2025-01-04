@@ -3,8 +3,8 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 import re
 import uuid
-from src.textsearchpy.normalizers import TokenNormalizer, LowerCaseNormalizer
-from src.textsearchpy.query import (
+from .normalizers import TokenNormalizer, LowerCaseNormalizer
+from .query import (
     BooleanQuery,
     Clause,
     PhraseQuery,
