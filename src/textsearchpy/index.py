@@ -18,10 +18,14 @@ class IndexSearchError(Exception):
     pass
 
 
+class IndexingError(Exception):
+    pass
+
+
 class Document(BaseModel):
     text: str
     # metadata
-    id: Optional[int] = None
+    id: Optional[str] = None
     _index_tokens: Optional[List[str]] = None
 
 
@@ -101,8 +105,14 @@ class Index:
 
             tokens = self.tokenizer.tokenize(doc.text)
             tokens = self._normalize_tokens(tokens)
-            doc_id = uuid.uuid4()
-            doc.id = doc_id
+            if doc.id is not None:
+                if doc.id in self.documents:
+                    raise IndexingError(
+                        f"Attempting to add a Document with ID: {doc.id} already exists in index"
+                    )
+            else:
+                doc_id = uuid.uuid4()
+                doc.id = doc_id
             doc._index_tokens = tokens
             self._add_to_index(doc)
 
@@ -115,6 +125,39 @@ class Index:
         docs = [self.documents[d_id] for d_id in doc_ids]
 
         return docs
+
+    def delete(self, docs: List[Document] = None, ids: List[str] = None) -> int:
+        if docs is None and ids is None:
+            raise Exception("docs or ids required to delete from index")
+
+        ids_to_delete = []
+        if docs:
+            ids_to_delete = ids_to_delete + [
+                d.id for d in docs if d.id in self.documents
+            ]
+
+        if ids:
+            ids_to_delete = ids_to_delete + [id for id in ids if id in self.documents]
+
+        # this doesn't seem very performant, could revisit to take advantage of bulk operations
+        for d_id in ids_to_delete:
+            doc = self.documents[d_id]
+
+            for tok in doc._index_tokens:
+                if tok in self.inverted_index:
+                    self.inverted_index[tok].remove(d_id)
+                    if len(self.inverted_index[tok]) == 0:
+                        del self.inverted_index[tok]
+                if tok in self.positional_index and d_id in self.positional_index[tok]:
+                    del self.positional_index[tok][d_id]
+                    if len(self.positional_index[tok]) == 0:
+                        del self.positional_index[tok]
+
+        # remove documents
+        for d_id in ids_to_delete:
+            del self.documents[d_id]
+
+        return len(ids_to_delete)
 
     def _eval_query(self, query: Query) -> List[str]:
         if isinstance(query, BooleanQuery):

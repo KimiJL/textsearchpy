@@ -1,4 +1,5 @@
-from src.textsearchpy.index import SimpleTokenizer, Document, Index
+import pytest
+from src.textsearchpy.index import SimpleTokenizer, Document, Index, IndexingError
 from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 
 
@@ -59,6 +60,21 @@ def test_append_doc():
     index.append([doc2, doc3])
     assert len(index.documents) == 3
     assert len(index.inverted_index) == 12
+
+
+def test_append_doc_with_id():
+    index = Index()
+    doc1 = Document(text="i like cake", id="1")
+    doc2 = Document(text="you like cookie", id="2")
+    index.append([doc1, doc2])
+
+    assert len(index) == 2
+    assert index.documents["1"].text == "i like cake"
+    assert index.documents["2"].text == "you like cookie"
+
+    with pytest.raises(IndexingError):
+        dupe_id_doc = Document(text="another doc", id="1")
+        index.append([dupe_id_doc])
 
 
 def test_append_doc_mixed_type():
@@ -319,3 +335,21 @@ def test_index_length():
     index.append([doc1, doc2])
 
     assert len(index) == 2
+
+
+def test_index_delete():
+    index = Index()
+    doc1 = Document(text="i like cake, but do we like this specific cake", id="1")
+    doc2 = Document(text="you like cookie", id="2")
+    doc3 = Document(text="we like cake", id="3")
+    doc4 = Document(text="we should have a tea party", id="4")
+    index.append([doc1, doc2, doc3, doc4])
+
+    index.delete(ids=["1", "2", "3"])
+
+    assert len(index) == 1
+    assert index.inverted_index["we"] == ["4"]
+    assert index.positional_index["we"] == {"4": [0]}
+
+    assert len(index.search("cake")) == 0
+    assert len(index.search("tea")) == 1
