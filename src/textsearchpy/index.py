@@ -95,13 +95,17 @@ class Index:
 
         return tokens
 
+    def text_to_index_tokens(self, text: str) -> List[str]:
+        tokens = self.tokenizer.tokenize(text)
+        tokens = self._normalize_tokens(tokens)
+        return tokens
+
     def append(self, docs: List[Union[str, Document]]):
         for doc in docs:
             if isinstance(doc, str):
                 doc = Document(text=doc)
 
-            tokens = self.tokenizer.tokenize(doc.text)
-            tokens = self._normalize_tokens(tokens)
+            tokens = self.text_to_index_tokens(doc.text)
             if doc.id is not None:
                 if doc.id in self.documents:
                     raise IndexingError(
