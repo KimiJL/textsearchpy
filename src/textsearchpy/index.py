@@ -37,10 +37,7 @@ class Tokenizer(ABC):
 
 class SimpleTokenizer(Tokenizer):
     def tokenize(self, text: str) -> List[str]:
-        tokens = []
-        for match in PAT_ALPHABETIC.finditer(text):
-            tokens.append(match.group())
-
+        tokens = [match.group() for match in PAT_ALPHABETIC.finditer(text)]
         return tokens
 
 
