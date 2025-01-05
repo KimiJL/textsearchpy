@@ -10,9 +10,7 @@ class TokenNormalizer(ABC):
 
 class LowerCaseNormalizer(TokenNormalizer):
     def normalize(self, tokens: List[str]):
-        t_tokens = []
-        for token in tokens:
-            t_tokens.append(token.lower())
+        t_tokens = [t.lower() for t in tokens]
         return t_tokens
 
 
