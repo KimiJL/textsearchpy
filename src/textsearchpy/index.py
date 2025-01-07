@@ -71,11 +71,16 @@ class Index:
 
         if doc._index_tokens:
             for tok_i, tok in enumerate(doc._index_tokens):
-                # add to inverted index
-                if tok in self.inverted_index:
-                    self.inverted_index[tok].append(doc.id)
-                else:
-                    self.inverted_index[tok] = [doc.id]
+                # add to inverted index, first check if doc id already has been recorded in positional index to avoid dupe ids
+                # TODO think about if inverted_index is needed vs using positional index only
+                if (
+                    tok not in self.positional_index
+                    or doc.id not in self.positional_index[tok]
+                ):
+                    if tok in self.inverted_index:
+                        self.inverted_index[tok].append(doc.id)
+                    else:
+                        self.inverted_index[tok] = [doc.id]
 
                 # add to positional index
                 if tok not in self.positional_index:
@@ -112,7 +117,7 @@ class Index:
                         f"Attempting to add a Document with ID: {doc.id} already exists in index"
                     )
             else:
-                doc_id = uuid.uuid4()
+                doc_id = uuid.uuid4().hex
                 doc.id = doc_id
             doc._index_tokens = tokens
             self._add_to_index(doc)
@@ -146,7 +151,11 @@ class Index:
 
             for tok in doc._index_tokens:
                 if tok in self.inverted_index:
-                    self.inverted_index[tok].remove(d_id)
+                    # TODO should handle better?
+                    try:
+                        self.inverted_index[tok].remove(d_id)
+                    except ValueError:
+                        pass
                     if len(self.inverted_index[tok]) == 0:
                         del self.inverted_index[tok]
                 if tok in self.positional_index and d_id in self.positional_index[tok]:
