@@ -12,7 +12,7 @@ def load_corpus():
     data = []
     for f in listdir(REUTERS_DATA_PATH):
         if isfile(join(REUTERS_DATA_PATH, f)):
-            with open(join(REUTERS_DATA_PATH, f), "r") as file:
+            with open(join(REUTERS_DATA_PATH, f), "r", encoding="latin-1") as file:
                 data.append(file.read())
 
     return data
