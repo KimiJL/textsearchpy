@@ -1,4 +1,5 @@
-from benchmark_utils import create_index_from_data, print_memory_usage
+from benchmark_utils import create_index_from_data, print_memory_usage, evaluate_queries
+from textsearchpy.query import TermQuery
 from os import listdir
 from os.path import isfile, join, isdir
 import argparse
@@ -43,6 +44,15 @@ def run():
     index = create_index_from_data(data)
 
     print_memory_usage()
+
+    evaluate_queries(
+        index=index,
+        queries=[
+            TermQuery(term="hearts"),
+            TermQuery(term="child"),
+            TermQuery(term="software"),
+        ],
+    )
 
 
 if __name__ == "__main__":
