@@ -1,6 +1,7 @@
 import pytest
 from src.textsearchpy.index import SimpleTokenizer, Document, Index, IndexingError
 from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
+from src.textsearchpy.normalizers import StopwordsNormalizer
 
 
 def test_tokenize():
@@ -389,3 +390,15 @@ def test_index_delete():
 
     assert len(index.search("cake")) == 0
     assert len(index.search("tea")) == 1
+
+
+def test_query_with_filtered_tokens():
+    index = Index(token_normalizers=[StopwordsNormalizer()])
+
+    doc1 = Document(text="i like cake")
+    index.append([doc1])
+
+    # searching a term filtered by StopwordsNormalizer
+    q = TermQuery(term="i")
+    docs = index.search(q)
+    assert len(docs) == 0
