@@ -26,7 +26,6 @@ class Document(BaseModel):
     text: str
     # metadata
     id: Optional[str] = None
-    _index_tokens: Optional[List[str]] = None
 
 
 class Index:
@@ -47,14 +46,14 @@ class Index:
     def __len__(self):
         return len(self.documents)
 
-    def _add_to_index(self, doc: Document):
+    def _add_to_index(self, doc: Document, tokens: List[str]):
         if doc.id is None:
             raise ValueError("Document ID cannot be None")
 
         self.documents[doc.id] = doc
 
-        if doc._index_tokens:
-            for tok_i, tok in enumerate(doc._index_tokens):
+        if tokens:
+            for tok_i, tok in enumerate(tokens):
                 # add to inverted index, first check if doc id already has been recorded in positional index to avoid dupe ids
                 # TODO think about if inverted_index is needed vs using positional index only
                 if (
@@ -103,8 +102,8 @@ class Index:
             else:
                 doc_id = uuid.uuid4().hex
                 doc.id = doc_id
-            doc._index_tokens = tokens
-            self._add_to_index(doc)
+
+            self._add_to_index(doc, tokens)
 
     def search(self, query: Union[Query, str]) -> List[Document]:
         if isinstance(query, str):
@@ -133,7 +132,8 @@ class Index:
         for d_id in ids_to_delete:
             doc = self.documents[d_id]
 
-            for tok in doc._index_tokens:
+            # parses doc.text to tokens to clean up index, the tokens are not saved due to memory cost
+            for tok in self.text_to_index_tokens(doc.text):
                 if tok in self.inverted_index:
                     # TODO should handle better?
                     try:
