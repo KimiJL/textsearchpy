@@ -34,47 +34,6 @@ class StopwordsNormalizer(TokenNormalizer):
         return t_tokens
 
 
-class NGramNormalizer(TokenNormalizer):
-    """
-    Normalizer that for given input token, converts it to a list of possible n grams from min_gram to max_gram
-
-    min_gram: int - minimum length of n grams to generate
-    max_gram: int - maximum length of n grams to generate
-    preserve_original: bool - set to true if original token should be included in the final tokens output
-    """
-
-    def __init__(self, min_gram: int, max_gram: int, preserve_original: bool):
-        super().__init__()
-        self.min_gram = min_gram
-        self.max_gram = max_gram
-        self.preserve_original = preserve_original
-
-    def _convert_token_to_ngrams(self, token: str):
-        # only possibility when token is smaller than min gram len
-        if len(token) <= self.min_gram:
-            return [token]
-
-        ngrams = []
-        if self.preserve_original:
-            ngrams.append(token)
-
-        for i in range(len(token)):
-            # max_gram + 1 because range is not inclusive to last number
-            for j in range(self.min_gram, self.max_gram + 1):
-                if i + j > len(token):
-                    break
-                ngrams.append(token[i : i + j])
-
-        return ngrams
-
-    def normalize(self, tokens) -> List[str]:
-        t_tokens = []
-        for t in tokens:
-            t_tokens.extend(self._convert_token_to_ngrams(t))
-
-        return t_tokens
-
-
 # from nltk english list, in lowercase only
 DEFAULT_STOP_WORDS = [
     "i",
