@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
-import re
 import uuid
+
+from .tokenizers import SimpleTokenizer, Tokenizer
 from .normalizers import TokenNormalizer, LowerCaseNormalizer
 from .query import (
     BooleanQuery,
@@ -27,22 +27,6 @@ class Document(BaseModel):
     # metadata
     id: Optional[str] = None
     _index_tokens: Optional[List[str]] = None
-
-
-class Tokenizer(ABC):
-    @abstractmethod
-    def tokenize(self, text: str) -> List[str]:
-        pass
-
-
-class SimpleTokenizer(Tokenizer):
-    def tokenize(self, text: str) -> List[str]:
-        tokens = [match.group() for match in PAT_ALPHABETIC.finditer(text)]
-        return tokens
-
-
-# gensim simple_tokenize pattern
-PAT_ALPHABETIC = re.compile(r"(((?![\d])\w)+)", re.UNICODE)
 
 
 class Index:

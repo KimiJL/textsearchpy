@@ -1,46 +1,7 @@
 import pytest
-from src.textsearchpy.index import SimpleTokenizer, Document, Index, IndexingError
+from src.textsearchpy.index import Document, Index, IndexingError
 from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 from src.textsearchpy.normalizers import StopwordsNormalizer
-
-
-def test_tokenize():
-    text = "Iteratively yield tokens as unicode strings, removing accent marks and optionally lowercasing the unidoce string by assigning True to one of the parameters, lowercase, to_lower, or lower."
-    tokenizer = SimpleTokenizer()
-    tokens = tokenizer.tokenize(text)
-    assert tokens == [
-        "Iteratively",
-        "yield",
-        "tokens",
-        "as",
-        "unicode",
-        "strings",
-        "removing",
-        "accent",
-        "marks",
-        "and",
-        "optionally",
-        "lowercasing",
-        "the",
-        "unidoce",
-        "string",
-        "by",
-        "assigning",
-        "True",
-        "to",
-        "one",
-        "of",
-        "the",
-        "parameters",
-        "lowercase",
-        "to_lower",
-        "or",
-        "lower",
-    ]
-
-    text = "Version 4.0 was released on October 12, 2012."
-    tokens = tokenizer.tokenize(text)
-    assert tokens == ["Version", "was", "released", "on", "October"]
 
 
 def test_append_doc():
