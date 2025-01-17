@@ -367,7 +367,7 @@ def test_query_with_filtered_tokens():
     assert len(docs) == 0
 
 
-def test_index_save(tmp_path):
+def test_index_save_load(tmp_path):
     index = Index()
     doc1 = Document(text="you like cookie")
     doc2 = Document(text="we like cake")
@@ -396,3 +396,9 @@ def test_index_save(tmp_path):
 
     assert saved_docs[0]["text"] == "you like cookie"
     assert saved_docs[1]["text"] == "we like cake"
+
+    new_index = Index()
+    new_index.load_from_file(save_path)
+    assert len(new_index.search("you")) == 1
+    assert len(new_index.search("like")) == 2
+    assert len(new_index.documents) == 2

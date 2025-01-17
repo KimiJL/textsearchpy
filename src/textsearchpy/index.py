@@ -156,12 +156,12 @@ class Index:
 
         return len(ids_to_delete)
 
-    def save(self, path: str, mkdir: bool = True):
+    def save(self, path: str, mkdir: bool = True) -> bool:
         if not os.path.exists(path) and mkdir:
             Path(path).mkdir(parents=True, exist_ok=True)
 
         if not os.path.isdir(path):
-            raise Exception("input path should be a folder")
+            raise Exception(f"input path: {path} should be a folder")
 
         document_file_path = os.path.join(path, "docs.jsonl")
         index_file_path = os.path.join(path, "index.json")
@@ -186,6 +186,32 @@ class Index:
                 "positional_index": self.positional_index,
             }
             json.dump(file_body, index_file)
+
+        return True
+
+    def load_from_file(self, path: str) -> bool:
+        if not os.path.exists(path) or not os.path.isdir(path):
+            raise Exception(f"{path} must be a existing folder")
+
+        document_file_path = os.path.join(path, "docs.jsonl")
+        index_file_path = os.path.join(path, "index.json")
+
+        with open(index_file_path, "r") as f:
+            # TODO may want to validate tokenizer + normalizer set up against file
+            loaded_index = json.load(f)
+
+        self.inverted_index = loaded_index["inverted_index"]
+        self.positional_index = loaded_index["positional_index"]
+
+        saved_docs = {}
+        with open(document_file_path, "r") as f:
+            for line in f:
+                doc = Document.model_validate(json.loads(line))
+                saved_docs[doc.id] = doc
+
+        self.documents = saved_docs
+
+        return True
 
     def _eval_query(self, query: Query) -> List[str]:
         if isinstance(query, BooleanQuery):
