@@ -1,6 +1,9 @@
+import json
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 import uuid
+import os
 
 from .tokenizers import SimpleTokenizer, Tokenizer
 from .normalizers import TokenNormalizer, LowerCaseNormalizer
@@ -152,6 +155,37 @@ class Index:
             del self.documents[d_id]
 
         return len(ids_to_delete)
+
+    def save(self, path: str, mkdir: bool = True):
+        if not os.path.exists(path) and mkdir:
+            Path(path).mkdir(parents=True, exist_ok=True)
+
+        if not os.path.isdir(path):
+            raise Exception("input path should be a folder")
+
+        document_file_path = os.path.join(path, "docs.jsonl")
+        index_file_path = os.path.join(path, "index.json")
+
+        if os.path.exists(document_file_path):
+            raise Exception(f"{document_file_path} already exists")
+        if os.path.exists(index_file_path):
+            raise Exception(f"{index_file_path} already exists")
+
+        with open(document_file_path, "w") as doc_file:
+            for d in self.documents.values():
+                json.dump(d.model_dump(), doc_file)
+                doc_file.write("\n")
+
+        with open(index_file_path, "w") as index_file:
+            file_body = {
+                "token_normalizers": [
+                    t.__class__.__name__ for t in self.token_normalizers
+                ],
+                "tokenizer": self.tokenizer.__class__.__name__,
+                "inverted_index": self.inverted_index,
+                "positional_index": self.positional_index,
+            }
+            json.dump(file_body, index_file)
 
     def _eval_query(self, query: Query) -> List[str]:
         if isinstance(query, BooleanQuery):

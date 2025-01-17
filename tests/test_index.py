@@ -1,7 +1,9 @@
+import json
 import pytest
 from src.textsearchpy.index import Document, Index, IndexingError
 from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
 from src.textsearchpy.normalizers import StopwordsNormalizer
+import os
 
 
 def test_append_doc():
@@ -363,3 +365,34 @@ def test_query_with_filtered_tokens():
     q = TermQuery(term="i")
     docs = index.search(q)
     assert len(docs) == 0
+
+
+def test_index_save(tmp_path):
+    index = Index()
+    doc1 = Document(text="you like cookie")
+    doc2 = Document(text="we like cake")
+    index.append([doc1, doc2])
+
+    save_path = str(tmp_path / "test_save")
+    index.save(path=save_path)
+
+    index_file = os.path.join(save_path, "index.json")
+    doc_file = os.path.join(save_path, "docs.jsonl")
+    assert os.path.exists(index_file)
+    assert os.path.exists(doc_file)
+
+    with open(index_file, "r") as f:
+        saved_index_file = json.load(f)
+
+    assert saved_index_file["token_normalizers"] == ["LowerCaseNormalizer"]
+    assert saved_index_file["tokenizer"] == "SimpleTokenizer"
+    assert len(saved_index_file["inverted_index"]) == 5
+    assert len(saved_index_file["positional_index"]) == 5
+
+    saved_docs = []
+    with open(doc_file, "r") as f:
+        for line in f:
+            saved_docs.append(json.loads(line))
+
+    assert saved_docs[0]["text"] == "you like cookie"
+    assert saved_docs[1]["text"] == "we like cake"

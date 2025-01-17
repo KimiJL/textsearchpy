@@ -1,12 +1,15 @@
 [project]
 name = "textsearchpy"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
   { name="Kimi Li", email="kimi.jx.li@gmail.com" },
 ]
 description = "In memory text search engine written in python"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "pydantic>=2.0.0, <3",
+]
 classifiers = [
     "Typing :: Typed",
     "Intended Audience :: Developers",
