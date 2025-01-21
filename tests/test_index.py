@@ -188,7 +188,7 @@ def test_phrase_query():
     docs = index.search(q)
     assert len(docs) == 1
 
-    # currently algo is not order sensitive
+    # by default algo is not order sensitive
     q = PhraseQuery(terms=["cake", "like"], distance=0)
     docs = index.search(q)
     assert len(docs) == 2
