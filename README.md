@@ -53,7 +53,7 @@ query = '"quick fox"~1'
 
 ### Supported Query Types:
 
-*TermQuery - query with single token*
+**TermQuery - query with single token**
 
 ```python
 from textsearchpy.query import TermQuery
@@ -63,7 +63,7 @@ query = TermQuery(term="fox)
 ```
 
 
-*BooleanQuery - sub queries with boolean condition*
+**BooleanQuery - sub queries with boolean condition**
 
 Clause - "SHOULD", "MUST", "MUST_NOT"
 
@@ -101,7 +101,7 @@ final_query = BooleanQuery(
 ```
 
 
-*PhraseQuery - multi term query with option to set proximity distance*
+**PhraseQuery - multi term query with option to set proximity distance**
 
 by default, terms in phrase is not order sensitive
 
