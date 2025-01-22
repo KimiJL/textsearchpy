@@ -39,6 +39,9 @@ def run():
             TermQuery(term="payout"),
             TermQuery(term="income"),
             TermQuery(term="inventory"),
+            TermQuery(term="management"),
+            TermQuery(term="total"),
+            TermQuery(term="outcome"),
         ],
     )
 
@@ -50,14 +53,41 @@ def run():
                     BooleanClause(query=TermQuery(term="payout"), clause="MUST"),
                     BooleanClause(query=TermQuery(term="income"), clause="MUST"),
                 ]
-            )
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="management"), clause="SHOULD"),
+                    BooleanClause(
+                        query=TermQuery(term="acquisition"), clause="MUST_NOT"
+                    ),
+                ]
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="payout"), clause="SHOULD"),
+                    BooleanClause(query=TermQuery(term="income"), clause="SHOULD"),
+                ]
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="management"), clause="SHOULD"),
+                    BooleanClause(query=TermQuery(term="income"), clause="SHOULD"),
+                    BooleanClause(
+                        query=TermQuery(term="acquisition"), clause="MUST_NOT"
+                    ),
+                ]
+            ),
         ],
     )
 
     evaluate_queries(
         index=index,
         queries=[
-            PhraseQuery(terms=["management", "acquisition"], distance=2, ordered=False)
+            PhraseQuery(
+                terms=["management", "acquisition"], distance=10, ordered=False
+            ),
+            PhraseQuery(terms=["agree", "total"], distance=10, ordered=False),
+            PhraseQuery(terms=["payout", "income"], distance=10, ordered=False),
         ],
     )
 
