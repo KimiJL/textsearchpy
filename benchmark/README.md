@@ -3,8 +3,10 @@
 ## Dataset
 
 Download
-https://www.nltk.org/nltk_data/ The Reuters-21578 benchmark corpus
-https://www.gutenberg.org/cache/epub/feeds/ The Project Gutenberg offline catalog
+
+- https://www.nltk.org/nltk_data/ The Reuters-21578 benchmark corpus
+
+- https://www.gutenberg.org/cache/epub/feeds/ The Project Gutenberg offline catalog
 
 
 ## Benchmark Script
