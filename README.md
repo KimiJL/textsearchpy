@@ -124,3 +124,26 @@ query = PhraseQuery(terms=["jumps", "dog"], distance=3, ordered=True)
 # any two additional terms are allowed between these three terms for searching
 query = '"jumps lazy dog"~2'
 ```
+
+## Benchmark
+
+see ./benchmark for more info
+
+### Index Performance
+
+index created with SimpleTokenizer and LowerCaseNormalizer
+
+| dataset  | # of docs | # of unique terms | index time | raw data size | memory use |
+| -------- | ------- | ------- | ------- | ------- | ------- |
+| Reuters  | 10788   | 29188 | 2.7s | 8.84 MB | ~135 MiB |
+| Gutenberg| 1000    | 424612 | 120s | 396.30 MB | ~3700 MiB |
+
+
+### Query Performance
+
+calculated as the average latency of few different preset queries 
+
+| dataset  | TermQuery | BooleanQuery | PhraseQuery | 
+| -------- | ------- | ------- | ------- | 
+| Reuters  | 0.08ms   | 0.11ms | 0.06ms | 
+| Gutenberg| 0.07ms    | 0.10ms | 55ms | 

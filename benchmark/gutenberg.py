@@ -1,5 +1,5 @@
 from benchmark_utils import create_index_from_data, print_memory_usage, evaluate_queries
-from textsearchpy.query import TermQuery
+from textsearchpy.query import TermQuery, BooleanQuery, BooleanClause, PhraseQuery
 from os import listdir
 from os.path import isfile, join, isdir
 import argparse
@@ -51,6 +51,49 @@ def run():
             TermQuery(term="hearts"),
             TermQuery(term="child"),
             TermQuery(term="software"),
+            TermQuery(term="development"),
+        ],
+    )
+
+    evaluate_queries(
+        index=index,
+        queries=[
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="design"), clause="MUST"),
+                    BooleanClause(query=TermQuery(term="art"), clause="MUST"),
+                ]
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="sky"), clause="SHOULD"),
+                    BooleanClause(query=TermQuery(term="sunlight"), clause="MUST_NOT"),
+                ]
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="payout"), clause="SHOULD"),
+                    BooleanClause(query=TermQuery(term="income"), clause="SHOULD"),
+                ]
+            ),
+            BooleanQuery(
+                clauses=[
+                    BooleanClause(query=TermQuery(term="management"), clause="SHOULD"),
+                    BooleanClause(query=TermQuery(term="income"), clause="SHOULD"),
+                    BooleanClause(
+                        query=TermQuery(term="acquisition"), clause="MUST_NOT"
+                    ),
+                ]
+            ),
+        ],
+    )
+
+    evaluate_queries(
+        index=index,
+        queries=[
+            PhraseQuery(terms=["example", "other"], distance=10, ordered=False),
+            PhraseQuery(terms=["through", "crowd"], distance=10, ordered=False),
+            PhraseQuery(terms=["day", "sunlight"], distance=10, ordered=False),
         ],
     )
 
