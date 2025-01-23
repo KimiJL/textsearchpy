@@ -1,16 +1,21 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
 
 
 class Query(BaseModel, ABC):
-    pass
+    @abstractmethod
+    def to_query_string(self) -> str:
+        pass
 
 
 # no plans for fields for now
 class TermQuery(Query):
     term: str
+
+    def to_query_string(self) -> str:
+        return f"{self.term}"
 
 
 class Clause(str, Enum):
@@ -27,11 +32,40 @@ class BooleanClause(BaseModel):
 class BooleanQuery(Query):
     clauses: List[BooleanClause]
 
+    def to_query_string(self) -> str:
+        if not self.clauses:
+            return ""
+        query_string = ""
+        for clause in self.clauses:
+            sub_query_string = clause.query.to_query_string()
+            if isinstance(clause.query, BooleanQuery):
+                sub_query_string = f"({sub_query_string})"
+
+            if len(query_string) > 0:
+                if clause.clause is Clause.MUST:
+                    sub_query_string = f" AND {sub_query_string}"
+                elif clause.clause is Clause.SHOULD:
+                    sub_query_string = f" OR {sub_query_string}"
+                elif clause.clause is Clause.MUST_NOT:
+                    sub_query_string = f" NOT {sub_query_string}"
+            query_string += sub_query_string
+
+        return query_string
+
 
 class PhraseQuery(Query):
     terms: List[str]
     distance: int
     ordered: bool = False
+
+    # ordered state is not reflected
+    def to_query_string(self) -> str:
+        join_terms = " ".join(self.terms)
+        query_string = f'"{join_terms}"'
+        if self.distance > 0:
+            query_string += f"~{str(self.distance)}"
+
+        return query_string
 
 
 class QueryParseError(Exception):
