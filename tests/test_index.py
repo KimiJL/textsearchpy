@@ -370,6 +370,11 @@ def test_query_with_filtered_tokens():
     docs = index.search(q)
     assert len(docs) == 0
 
+    # since like hits, assume the doc hits
+    q = PhraseQuery(terms=["i", "like"], distance=0)
+    docs = index.search(q)
+    assert len(docs) == 1
+
 
 def test_index_save_load(tmp_path):
     index = Index()

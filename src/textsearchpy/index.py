@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 from pydantic import BaseModel
 import uuid
 import os
@@ -29,6 +29,18 @@ class Document(BaseModel):
     text: str
     # metadata
     id: Optional[str] = None
+
+
+class QueryResult(BaseModel):
+    """
+    internal results for evaluating queries used to track metadata
+    """
+
+    # set or list out of convenience, to avoid recreating objects
+    doc_ids: Union[Set[str], List[str]] = []
+
+    # optional, set when calculating BM25 score
+    freq_map: Optional[Dict[str, Dict[str, int]]] = None
 
 
 class Index:
@@ -117,7 +129,8 @@ class Index:
         if isinstance(query, str):
             query = parse_query(query)
 
-        doc_ids = self._eval_query(query)
+        query_result = self._eval_query(query, term_freq=False)
+        doc_ids = query_result.doc_ids
 
         docs = [self.documents[d_id] for d_id in doc_ids]
 
@@ -220,7 +233,7 @@ class Index:
 
         return True
 
-    def _eval_query(self, query: Query) -> List[str]:
+    def _eval_query(self, query: Query, term_freq: bool) -> QueryResult:
         if isinstance(query, BooleanQuery):
             and_set = None
             or_set = set()
@@ -230,7 +243,8 @@ class Index:
                 query = clause.query
                 query_condition = clause.clause
 
-                doc_ids = self._eval_query(query)
+                sub_query_result = self._eval_query(query, term_freq)
+                doc_ids = sub_query_result.doc_ids
 
                 if query_condition == Clause.MUST:
                     if and_set is None:
@@ -244,27 +258,38 @@ class Index:
 
             # if ANDs exists ORs are ignored
             match_doc_ids = and_set if and_set else or_set
-            return match_doc_ids - not_set
+            match_doc_ids = match_doc_ids - not_set
+            query_result = QueryResult(doc_ids=match_doc_ids)
+            return query_result
 
         elif isinstance(query, TermQuery):
             # running same normalization on the search term to ensure consistency
             query_tokens = self._normalize_tokens([query.term])
             # TODO revisit: if normalization removes the token, consider no match
             if len(query_tokens) == 0:
-                return []
+                return QueryResult()
 
             query_term = query_tokens[0]
 
-            return self.inverted_index.get(query_term, [])
+            doc_ids = self.inverted_index.get(query_term, [])
+            query_result = QueryResult(doc_ids=doc_ids)
+            if term_freq:
+                freq_map = {
+                    doc_id: len(self.positional_index[query_term][doc_id])
+                    for doc_id in doc_ids
+                }
+                query_result.freq_map = freq_map
+
+            return query_result
 
         elif isinstance(query, PhraseQuery):
             terms = self._normalize_tokens(query.terms)
 
             if len(terms) == 1:
                 # if phrase query is normalized to 1 term, treat it like a TermQuery
-                return self.inverted_index.get(query_term, [])
+                return self._eval_query(TermQuery(term=terms[0]), term_freq)
             elif len(terms) == 0:
-                return []
+                return QueryResult()
 
             # +1 to mimic edit distance instead of word distance i.e. "word1 word2" should be edit distance of 0, but word distance of 1
             distance = query.distance + 1
@@ -273,7 +298,7 @@ class Index:
             postings = []
             for term in terms:
                 if term not in self.positional_index:
-                    return []
+                    return QueryResult()
                 postings.append(self.positional_index[term])
 
             doc_ids = []
@@ -285,8 +310,8 @@ class Index:
                 doc_ids = self._multi_term_positional_intersect(
                     postings, distance, ordered
                 )
-
-            return doc_ids
+            query_result = QueryResult(doc_ids=doc_ids)
+            return query_result
         else:
             raise ValueError("Invalid Query type")
 
