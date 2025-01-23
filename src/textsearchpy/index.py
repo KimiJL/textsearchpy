@@ -46,6 +46,9 @@ class Index:
         # {token: {doc_id: [token_index]}}
         self.positional_index: Dict[str, Dict[str, List[int]]] = {}
 
+        # tracked to calculate bm25 score avg doc length
+        self.total_tokens = 0
+
     def __len__(self):
         return len(self.documents)
 
@@ -76,6 +79,8 @@ class Index:
                     self.positional_index[tok][doc.id].append(tok_i)
                 else:
                     self.positional_index[tok][doc.id] = [tok_i]
+
+            self.total_tokens += len(tokens)
 
     def _normalize_tokens(self, tokens: List[str]):
         if not self.token_normalizers:
@@ -136,7 +141,8 @@ class Index:
             doc = self.documents[d_id]
 
             # parses doc.text to tokens to clean up index, the tokens are not saved due to memory cost
-            for tok in self.text_to_index_tokens(doc.text):
+            tokens = self.text_to_index_tokens(doc.text)
+            for tok in tokens:
                 if tok in self.inverted_index:
                     # TODO should handle better?
                     try:
@@ -149,6 +155,7 @@ class Index:
                     del self.positional_index[tok][d_id]
                     if len(self.positional_index[tok]) == 0:
                         del self.positional_index[tok]
+            self.total_tokens -= len(tokens)
 
         # remove documents
         for d_id in ids_to_delete:

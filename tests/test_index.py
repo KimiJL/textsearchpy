@@ -10,6 +10,7 @@ def test_append_doc():
     index = Index()
     assert len(index.documents) == 0
     assert len(index.inverted_index) == 0
+    assert index.total_tokens == 0
 
     doc1 = Document(
         text="repository contains all project files, including the revision history"
@@ -18,12 +19,14 @@ def test_append_doc():
 
     assert len(index.documents) == 1
     assert len(index.inverted_index) == 9
+    assert index.total_tokens == 9
 
     doc2 = Document(text="repository repeats words words words")
     doc3 = Document(text="words and words and words")
     index.append([doc2, doc3])
     assert len(index.documents) == 3
     assert len(index.inverted_index) == 12
+    assert index.total_tokens == 19
 
 
 def test_append_doc_with_id():
@@ -350,6 +353,7 @@ def test_index_delete():
     assert len(index) == 1
     assert index.inverted_index["we"] == ["4"]
     assert index.positional_index["we"] == {"4": [0]}
+    assert index.total_tokens == 6
 
     assert len(index.search("cake")) == 0
     assert len(index.search("tea")) == 1
