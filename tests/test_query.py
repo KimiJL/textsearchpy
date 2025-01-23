@@ -1,4 +1,10 @@
-from src.textsearchpy.query import BooleanQuery, PhraseQuery, TermQuery, parse_query
+from src.textsearchpy.query import (
+    BooleanClause,
+    BooleanQuery,
+    PhraseQuery,
+    TermQuery,
+    parse_query,
+)
 
 
 def test_parse_term_query():
@@ -109,3 +115,43 @@ def test_basic_group_query():
     assert sub_q.clauses[0].clause == "SHOULD"
     assert isinstance(sub_q.clauses[1].query, TermQuery)
     assert sub_q.clauses[1].clause == "SHOULD"
+
+
+def test_to_query_string():
+    query = "(group word) AND search"
+    q = parse_query(query)
+
+    assert q.to_query_string() == "(group OR word) AND search"
+
+    query = '("this is"~10 OR word NOT engine) AND search NOT ("complex at all"~3)'
+    q = parse_query(query)
+    assert (
+        q.to_query_string()
+        == '("this is"~10 OR word NOT engine) AND search NOT ("complex at all"~3)'
+    )
+
+    term_1 = TermQuery(term="fox")
+    term_2 = TermQuery(term="dog")
+    query_left = BooleanQuery(
+        clauses=[
+            BooleanClause(query=term_1, clause="SHOULD"),
+            BooleanClause(query=term_2, clause="SHOULD"),
+        ]
+    )
+
+    term_3 = TermQuery(term="quick")
+    term_4 = TermQuery(term="lazy")
+    query_right = BooleanQuery(
+        clauses=[
+            BooleanClause(query=term_3, clause="SHOULD"),
+            BooleanClause(query=term_4, clause="MUST_NOT"),
+        ]
+    )
+
+    query = BooleanQuery(
+        clauses=[
+            BooleanClause(query=query_left, clause="MUST"),
+            BooleanClause(query=query_right, clause="MUST"),
+        ]
+    )
+    assert query.to_query_string() == "(fox OR dog) AND (quick NOT lazy)"
