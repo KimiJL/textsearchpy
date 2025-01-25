@@ -4,6 +4,8 @@ from typing import Dict, List, Optional, Set, Union
 from pydantic import BaseModel
 import uuid
 import os
+import math
+from queue import PriorityQueue
 
 from .tokenizers import SimpleTokenizer, Tokenizer
 from .normalizers import TokenNormalizer, LowerCaseNormalizer
@@ -29,6 +31,10 @@ class Document(BaseModel):
     text: str
     # metadata
     id: Optional[str] = None
+    # document size post processing
+    count: Optional[int] = None
+    # query match score
+    score: Optional[float] = None
 
 
 class QueryResult(BaseModel):
@@ -39,8 +45,8 @@ class QueryResult(BaseModel):
     # set or list out of convenience, to avoid recreating objects
     doc_ids: Union[Set[str], List[str]] = []
 
-    # optional, set when calculating BM25 score
-    freq_map: Optional[Dict[str, Dict[str, int]]] = None
+    # track doc_id: match_score of each document
+    match_score: Optional[Dict[str, float]] = None
 
 
 class Index:
@@ -114,6 +120,7 @@ class Index:
                 doc = Document(text=doc)
 
             tokens = self.text_to_index_tokens(doc.text)
+            doc.count = len(tokens)
             if doc.id is not None:
                 if doc.id in self.documents:
                     raise IndexingError(
@@ -129,12 +136,36 @@ class Index:
         if isinstance(query, str):
             query = parse_query(query)
 
-        query_result = self._eval_query(query, term_freq=False)
+        query_result = self._eval_query(query, score=False)
         doc_ids = query_result.doc_ids
 
         docs = [self.documents[d_id] for d_id in doc_ids]
 
         return docs
+
+    def retrieve_top_n(
+        self, query: Union[Query, str], n: Optional[int] = None
+    ) -> List[Document]:
+        if isinstance(query, str):
+            query = parse_query(query)
+
+        query_result = self._eval_query(query, score=True)
+        queue = PriorityQueue()
+
+        for doc_id, score in query_result.match_score.items():
+            queue.put((score, doc_id))
+
+            if n and len(queue) > n:
+                queue.get()
+
+        result = []
+        while not queue.empty():
+            score, doc_id = queue.get()
+            doc = self.documents[doc_id]
+            doc.score = score
+            result.insert(0, doc)
+
+        return result
 
     def delete(self, docs: List[Document] = None, ids: List[str] = None) -> int:
         if docs is None and ids is None:
@@ -233,17 +264,19 @@ class Index:
 
         return True
 
-    def _eval_query(self, query: Query, term_freq: bool) -> QueryResult:
+    def _eval_query(self, query: Query, score: bool) -> QueryResult:
         if isinstance(query, BooleanQuery):
             and_set = None
             or_set = set()
             not_set = set()
 
+            match_score = {}
+
             for clause in query.clauses:
                 query = clause.query
                 query_condition = clause.clause
 
-                sub_query_result = self._eval_query(query, term_freq)
+                sub_query_result = self._eval_query(query, score)
                 doc_ids = sub_query_result.doc_ids
 
                 if query_condition == Clause.MUST:
@@ -251,15 +284,33 @@ class Index:
                         and_set = set(doc_ids)
                     else:
                         and_set = and_set.intersection(set(doc_ids))
+
+                    if score:
+                        for doc_id in and_set:
+                            match_score[doc_id] = (
+                                match_score.get(doc_id, 0)
+                                + sub_query_result.match_score[doc_id]
+                            )
+
                 elif query_condition == Clause.SHOULD:
                     or_set.update(doc_ids)
+
+                    if score and and_set is None:
+                        for (
+                            d_id,
+                            sub_q_match_score,
+                        ) in sub_query_result.match_score.items():
+                            match_score[d_id] = (
+                                match_score.get(d_id, 0) + sub_q_match_score
+                            )
+
                 elif query_condition == Clause.MUST_NOT:
                     not_set.update(doc_ids)
 
             # if ANDs exists ORs are ignored
-            match_doc_ids = and_set if and_set else or_set
+            match_doc_ids = and_set if and_set is not None else or_set
             match_doc_ids = match_doc_ids - not_set
-            query_result = QueryResult(doc_ids=match_doc_ids)
+            query_result = QueryResult(doc_ids=match_doc_ids, match_score=match_score)
             return query_result
 
         elif isinstance(query, TermQuery):
@@ -273,12 +324,16 @@ class Index:
 
             doc_ids = self.inverted_index.get(query_term, [])
             query_result = QueryResult(doc_ids=doc_ids)
-            if term_freq:
-                freq_map = {
-                    doc_id: len(self.positional_index[query_term][doc_id])
-                    for doc_id in doc_ids
-                }
-                query_result.freq_map = freq_map
+            if score:
+                match_score = {}
+                for doc_id in doc_ids:
+                    term_freq = len(self.positional_index[query_term][doc_id])
+                    match_freq = len(doc_ids)
+                    token_len = self.documents[doc_id].count
+                    match_score[doc_id] = self._bm_25_score(
+                        term_freq, match_freq, token_len
+                    )
+                query_result.match_score = match_score
 
             return query_result
 
@@ -287,7 +342,7 @@ class Index:
 
             if len(terms) == 1:
                 # if phrase query is normalized to 1 term, treat it like a TermQuery
-                return self._eval_query(TermQuery(term=terms[0]), term_freq)
+                return self._eval_query(TermQuery(term=terms[0]), score)
             elif len(terms) == 0:
                 return QueryResult()
 
@@ -302,15 +357,18 @@ class Index:
                 postings.append(self.positional_index[term])
 
             doc_ids = []
+            match_score = {}
             if len(terms) == 2:
                 p1 = postings[0]
                 p2 = postings[1]
-                doc_ids = self._positional_intersect(p1, p2, distance, ordered)
-            elif len(terms) > 2:
-                doc_ids = self._multi_term_positional_intersect(
-                    postings, distance, ordered
+                doc_ids, match_score = self._positional_intersect(
+                    p1, p2, distance, ordered, score
                 )
-            query_result = QueryResult(doc_ids=doc_ids)
+            elif len(terms) > 2:
+                doc_ids, match_score = self._multi_term_positional_intersect(
+                    postings, distance, ordered, score
+                )
+            query_result = QueryResult(doc_ids=doc_ids, match_score=match_score)
             return query_result
         else:
             raise ValueError("Invalid Query type")
@@ -322,7 +380,9 @@ class Index:
                 match_doc_ids.append(doc_id)
         return match_doc_ids
 
-    def _positional_intersect(self, p1: Dict, p2: Dict, k: int, ordered: bool):
+    def _positional_intersect(
+        self, p1: Dict, p2: Dict, k: int, ordered: bool, score: bool
+    ):
         result = set()
 
         # iterate through the rarer term to find matching documents
@@ -331,6 +391,7 @@ class Index:
         else:
             doc_ids = self._find_match_doc_ids(p1, p2)
 
+        freq_map = {}
         for doc_id in doc_ids:
             temp = []
             positions1 = p1[doc_id]
@@ -359,9 +420,20 @@ class Index:
                     # result.append((doc_id, pp1, ps))
                     result.add(doc_id)
 
+                # add in doc frequency matched, temp should be matched length
+                if score and len(temp) > 0:
+                    freq_map[doc_id] = freq_map.get(doc_id, 0) + len(temp)
+
+        match_score = {}
+        if score and freq_map:
+            for doc_id, term_freq in freq_map.items():
+                match_score[doc_id] = self._bm_25_score(
+                    term_freq, len(result), self.documents[doc_id].count
+                )
+
         # should revisit to clean up algo so maybe we don't need to construct set to list here
         # needed currently because matched doc_id can duplicate
-        return list(result)
+        return list(result), match_score
 
     def _multi_term_match_doc_ids(self, postings: List[Dict]):
         # start from the smallest candidate list to reduce search time
@@ -374,12 +446,13 @@ class Index:
         return candidate
 
     def _multi_term_positional_intersect(
-        self, postings: List[Dict], k: int, ordered: bool
+        self, postings: List[Dict], k: int, ordered: bool, score: bool
     ):
         result_doc_ids = set()
 
         doc_ids = self._multi_term_match_doc_ids(postings)
 
+        freq_map = {}
         for doc_id in doc_ids:
             positions1 = postings[0][doc_id]
             positions2 = postings[1][doc_id]
@@ -420,4 +493,31 @@ class Index:
                 if len(ranges) > 0:
                     result_doc_ids.add(doc_id)
 
-        return list(result_doc_ids)
+                # ranges should represent all matches for starting position1
+                if score and len(ranges) > 0:
+                    freq_map[doc_id] = freq_map.get(doc_id, 0) + len(ranges)
+
+        match_score = {}
+        if score and freq_map:
+            for doc_id, term_freq in freq_map.items():
+                match_score[doc_id] = self._bm_25_score(
+                    term_freq, len(result_doc_ids), self.documents[doc_id].count
+                )
+
+        return list(result_doc_ids), match_score
+
+    def _bm_25_score(self, term_freq: int, match_freq: int, token_len: int):
+        # default following elastic search
+        k1 = 1.2
+        b = 0.75
+
+        doc_n = len(self.documents)
+
+        idf = math.log((doc_n - match_freq + 0.5) / (match_freq + 0.5) + 1)
+
+        top_term = term_freq * (k1 + 1)
+        bot_term = term_freq + k1 * (
+            1 - b + b * token_len / (self.total_tokens / doc_n)
+        )
+
+        return idf * top_term / bot_term

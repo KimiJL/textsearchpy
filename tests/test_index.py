@@ -411,3 +411,17 @@ def test_index_save_load(tmp_path):
     assert len(new_index.search("you")) == 1
     assert len(new_index.search("like")) == 2
     assert len(new_index.documents) == 2
+
+
+def test_search_top_n():
+    index = Index()
+    doc1 = Document(text="i like cake, but do we like this specific cake")
+    doc2 = Document(text="like like cake")
+    doc3 = Document(text="cake cake cake")
+    doc4 = Document(text="cake cake like")
+    doc5 = Document(text="cake like i")
+    index.append([doc1, doc2, doc3, doc4, doc5])
+
+    docs = index.retrieve_top_n("cake")
+
+    assert len(docs) == 5
