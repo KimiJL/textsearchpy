@@ -155,7 +155,7 @@ class Index:
         for doc_id, score in query_result.match_score.items():
             queue.put((score, doc_id))
 
-            if n and len(queue) > n:
+            if n and queue.qsize() > n:
                 queue.get()
 
         result = []

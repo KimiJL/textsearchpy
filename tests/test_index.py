@@ -425,3 +425,11 @@ def test_search_top_n():
     docs = index.retrieve_top_n("cake")
 
     assert len(docs) == 5
+    assert docs[0].text == doc3.text
+    assert docs[1].text == doc4.text
+
+    docs = index.retrieve_top_n("cake", n=2)
+
+    assert len(docs) == 2
+    assert docs[0].text == doc3.text
+    assert docs[1].text == doc4.text
