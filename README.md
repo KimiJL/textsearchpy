@@ -133,10 +133,12 @@ see ./benchmark for more info
 
 index created with SimpleTokenizer and LowerCaseNormalizer
 
-| dataset  | # of docs | # of unique terms | index time | raw data size | memory use |
-| -------- | ------- | ------- | ------- | ------- | ------- |
-| Reuters  | 10788   | 29188 | 2.7s | 8.84 MB | ~135 MiB |
-| Gutenberg| 1000    | 424612 | 120s | 396.30 MB | ~3700 MiB |
+terms - searchable tokens after tokenization and normalization
+
+| dataset  | # of docs | # of unique terms | # of terms total | index time | raw data size | memory use |
+| -------- | ------- | ------- | ------- | ------- | ------- | ------- |
+| Reuters  | 10788   | 29188 | 1330266 | 2.7s | 8.84 MB | ~135 MiB |
+| Gutenberg| 1000    | 424612 | 68132774 | 120s | 396.30 MB | ~3700 MiB |
 
 
 ### Query Performance
