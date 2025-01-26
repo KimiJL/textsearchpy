@@ -433,3 +433,9 @@ def test_search_top_n():
     assert len(docs) == 2
     assert docs[0].text == doc3.text
     assert docs[1].text == doc4.text
+
+    docs = index.retrieve_top_n('"like cake"~1')
+    assert len(docs) == 4
+
+    docs = index.retrieve_top_n("i AND cake")
+    assert len(docs) == 2
