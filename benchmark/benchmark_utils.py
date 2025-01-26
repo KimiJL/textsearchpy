@@ -14,6 +14,7 @@ def create_index_from_data(data: List[str]):
     print("Indexing Execution time:", elapsed_time, "seconds")
     print(f"Total Documents in Index: {len(index)}")
     print(f"Token Index Size: {len(index.inverted_index)}")
+    print(f"Total tokens: {str(index.total_tokens)}")
 
     return index
 
