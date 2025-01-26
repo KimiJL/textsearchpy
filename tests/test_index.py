@@ -10,6 +10,7 @@ def test_append_doc():
     index = Index()
     assert len(index.documents) == 0
     assert len(index.inverted_index) == 0
+    assert index.total_tokens == 0
 
     doc1 = Document(
         text="repository contains all project files, including the revision history"
@@ -18,12 +19,14 @@ def test_append_doc():
 
     assert len(index.documents) == 1
     assert len(index.inverted_index) == 9
+    assert index.total_tokens == 9
 
     doc2 = Document(text="repository repeats words words words")
     doc3 = Document(text="words and words and words")
     index.append([doc2, doc3])
     assert len(index.documents) == 3
     assert len(index.inverted_index) == 12
+    assert index.total_tokens == 19
 
 
 def test_append_doc_with_id():
@@ -350,6 +353,7 @@ def test_index_delete():
     assert len(index) == 1
     assert index.inverted_index["we"] == ["4"]
     assert index.positional_index["we"] == {"4": [0]}
+    assert index.total_tokens == 6
 
     assert len(index.search("cake")) == 0
     assert len(index.search("tea")) == 1
@@ -365,6 +369,11 @@ def test_query_with_filtered_tokens():
     q = TermQuery(term="i")
     docs = index.search(q)
     assert len(docs) == 0
+
+    # since like hits, assume the doc hits
+    q = PhraseQuery(terms=["i", "like"], distance=0)
+    docs = index.search(q)
+    assert len(docs) == 1
 
 
 def test_index_save_load(tmp_path):
@@ -402,3 +411,31 @@ def test_index_save_load(tmp_path):
     assert len(new_index.search("you")) == 1
     assert len(new_index.search("like")) == 2
     assert len(new_index.documents) == 2
+
+
+def test_search_top_n():
+    index = Index()
+    doc1 = Document(text="i like cake, but do we like this specific cake")
+    doc2 = Document(text="like like cake")
+    doc3 = Document(text="cake cake cake")
+    doc4 = Document(text="cake cake like")
+    doc5 = Document(text="cake like i")
+    index.append([doc1, doc2, doc3, doc4, doc5])
+
+    docs = index.retrieve_top_n("cake")
+
+    assert len(docs) == 5
+    assert docs[0].text == doc3.text
+    assert docs[1].text == doc4.text
+
+    docs = index.retrieve_top_n("cake", n=2)
+
+    assert len(docs) == 2
+    assert docs[0].text == doc3.text
+    assert docs[1].text == doc4.text
+
+    docs = index.retrieve_top_n('"like cake"~1')
+    assert len(docs) == 4
+
+    docs = index.retrieve_top_n("i AND cake")
+    assert len(docs) == 2
