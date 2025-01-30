@@ -1,7 +1,13 @@
 import json
 import pytest
 from src.textsearchpy.index import Document, Index, IndexingError
-from src.textsearchpy.query import BooleanClause, BooleanQuery, PhraseQuery, TermQuery
+from src.textsearchpy.query import (
+    BooleanClause,
+    BooleanQuery,
+    PhraseQuery,
+    TermQuery,
+    WildcardQuery,
+)
 from src.textsearchpy.normalizers import StopwordsNormalizer
 import os
 
@@ -439,3 +445,31 @@ def test_search_top_n():
 
     docs = index.retrieve_top_n("i AND cake")
     assert len(docs) == 2
+
+
+def test_wildcard_query():
+    index = Index()
+
+    doc1 = Document(text="i like cake, but do we like this specific cake")
+    doc2 = Document(text="you like cookie")
+    doc3 = Document(text="we like cake")
+    doc4 = Document(text="we should have a tea party")
+    doc5 = Document(text="we like cantaloupe")
+    doc6 = Document(text="cape like i")
+    index.append([doc1, doc2, doc3, doc4, doc5, doc6])
+
+    query = WildcardQuery(term="ca?e")
+    docs = index.search(query)
+    assert len(docs) == 3
+
+    query = WildcardQuery(term="ca*e")
+    docs = index.search(query)
+    assert len(docs) == 4
+
+    # special case of no wildcard symbol should not break flow
+    query = WildcardQuery(term="cake")
+    docs = index.search(query)
+    assert len(docs) == 2
+
+    docs = index.search("c*e")
+    assert len(docs) == 5

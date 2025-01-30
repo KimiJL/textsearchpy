@@ -3,6 +3,7 @@ from src.textsearchpy.query import (
     BooleanQuery,
     PhraseQuery,
     TermQuery,
+    WildcardQuery,
     parse_query,
 )
 
@@ -115,6 +116,18 @@ def test_basic_group_query():
     assert sub_q.clauses[0].clause == "SHOULD"
     assert isinstance(sub_q.clauses[1].query, TermQuery)
     assert sub_q.clauses[1].clause == "SHOULD"
+
+
+def test_wildcard_query():
+    query = "sea?ch"
+    q = parse_query(query)
+    assert isinstance(q, WildcardQuery)
+    assert q.term == query
+
+    query = "sea*ch"
+    q = parse_query(query)
+    assert isinstance(q, WildcardQuery)
+    assert q.term == query
 
 
 def test_to_query_string():

@@ -183,6 +183,12 @@ def _parse_base_q(tokens: List[str]):
 
         return PhraseQuery(terms=terms, distance=distance)
 
+    # wildcard query
+    elif "?" in token or "*" in token:
+        term = tokens.pop(0)
+        q = WildcardQuery(term=term)
+        return q
+
     # term query
     else:
         term = tokens.pop(0)

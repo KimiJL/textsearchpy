@@ -375,16 +375,16 @@ class Index:
         elif isinstance(query, WildcardQuery):
             if "?" not in query.term and "*" not in query.term:
                 # wildcard search not needed when wildcard symbol not present
-                return self._eval_query(TermQuery(term=terms[0]), score)
+                return self._eval_query(TermQuery(term=query.term), score)
 
             pattern = query.term.replace("?", ".")
-            pattern = query.term.replace("*", ".+")
+            pattern = pattern.replace("*", ".+")
             re_pattern = re.compile(pattern)
             doc_ids = set()
             match_score = None
             for tok in self.positional_index.keys():
                 if re_pattern.fullmatch(tok):
-                    sub_query_result = self._eval_query(TermQuery(term=terms[0]), score)
+                    sub_query_result = self._eval_query(TermQuery(term=tok), score)
                     doc_ids.update(sub_query_result.doc_ids)
 
                     if score:
@@ -400,6 +400,7 @@ class Index:
                                     match_score.get(d_id, 0) + sub_q_match_score
                                 )
             query_result = QueryResult(doc_ids=doc_ids, match_score=match_score)
+            return query_result
         else:
             raise ValueError("Invalid Query type")
 
