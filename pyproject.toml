@@ -1,6 +1,6 @@
 [project]
 name = "textsearchpy"
-version = "1.0.1"
+version = "1.1.1"
 authors = [
   { name="Kimi Li", email="kimi.jx.li@gmail.com" },
 ]
