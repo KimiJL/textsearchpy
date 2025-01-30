@@ -68,6 +68,13 @@ class PhraseQuery(Query):
         return query_string
 
 
+class WildcardQuery(Query):
+    term: str
+
+    def to_query_string(self) -> str:
+        return f"{self.term}"
+
+
 class QueryParseError(Exception):
     pass
 
@@ -175,6 +182,12 @@ def _parse_base_q(tokens: List[str]):
         distance = distance if distance else 0
 
         return PhraseQuery(terms=terms, distance=distance)
+
+    # wildcard query
+    elif "?" in token or "*" in token:
+        term = tokens.pop(0)
+        q = WildcardQuery(term=term)
+        return q
 
     # term query
     else:

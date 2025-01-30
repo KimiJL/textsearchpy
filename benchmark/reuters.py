@@ -1,11 +1,17 @@
 from benchmark_utils import create_index_from_data, print_memory_usage, evaluate_queries
-from textsearchpy.query import TermQuery, BooleanQuery, BooleanClause, PhraseQuery
+from textsearchpy.query import (
+    TermQuery,
+    BooleanQuery,
+    BooleanClause,
+    PhraseQuery,
+    WildcardQuery,
+)
 from os import listdir
 from os.path import isfile, join
 from pathlib import Path
 
 # https://www.nltk.org/nltk_data/ The Reuters-21578 benchmark corpus
-REUTERS_DATA_PATH = ""
+REUTERS_DATA_PATH = "/Users/kimili/Downloads/reuters/total"
 
 
 def load_corpus():
@@ -89,6 +95,10 @@ def run():
             PhraseQuery(terms=["agree", "total"], distance=10, ordered=False),
             PhraseQuery(terms=["payout", "income"], distance=10, ordered=False),
         ],
+    )
+
+    evaluate_queries(
+        index=index, queries=[WildcardQuery(term="s?t"), WildcardQuery(term="in*e")]
     )
 
 

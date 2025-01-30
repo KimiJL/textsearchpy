@@ -125,6 +125,23 @@ query = PhraseQuery(terms=["jumps", "dog"], distance=3, ordered=True)
 query = '"jumps lazy dog"~2'
 ```
 
+
+**WildcardQuery - query with wildcard character to match**
+Note: current implementation scans through entire index for simplicity, which can be slow
+
+```python
+from textsearchpy.query import WildcardQuery
+
+# allow a single wildcard character, i.e. brown brawn
+query = "br?wn"
+query = WildcardQuery(term="br?wn")
+
+# allow many wildcard character to match, i.e. bun, barn, brown
+query = "b*n"
+query = WildcardQuery(term=term)
+
+```
+
 ## Benchmark
 
 see ./benchmark for more info
@@ -145,7 +162,7 @@ terms - searchable tokens after tokenization and normalization
 
 calculated as the average latency of few different preset queries 
 
-| dataset  | TermQuery | BooleanQuery | PhraseQuery | 
-| -------- | ------- | ------- | ------- | 
-| Reuters  | 0.08ms   | 0.11ms | 0.06ms | 
-| Gutenberg| 0.07ms    | 0.10ms | 55ms | 
+| dataset  | TermQuery | BooleanQuery | PhraseQuery | WildcardQuery |
+| -------- | ------- | ------- | ------- | ------- | 
+| Reuters  | 0.08ms   | 0.11ms | 0.06ms | 8.46 ms |
+| Gutenberg| 0.07ms    | 0.10ms | 55ms | TODO |
