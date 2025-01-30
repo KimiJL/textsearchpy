@@ -68,6 +68,13 @@ class PhraseQuery(Query):
         return query_string
 
 
+class WildcardQuery(Query):
+    term: str
+
+    def to_query_string(self) -> str:
+        return f"{self.term}"
+
+
 class QueryParseError(Exception):
     pass
 

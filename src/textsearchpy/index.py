@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 from typing import Dict, List, Optional, Set, Union
 from pydantic import BaseModel
 import uuid
@@ -15,6 +16,7 @@ from .query import (
     PhraseQuery,
     Query,
     TermQuery,
+    WildcardQuery,
     parse_query,
 )
 
@@ -370,6 +372,34 @@ class Index:
                 )
             query_result = QueryResult(doc_ids=doc_ids, match_score=match_score)
             return query_result
+        elif isinstance(query, WildcardQuery):
+            if "?" not in query.term and "*" not in query.term:
+                # wildcard search not needed when wildcard symbol not present
+                return self._eval_query(TermQuery(term=terms[0]), score)
+
+            pattern = query.term.replace("?", ".")
+            pattern = query.term.replace("*", ".+")
+            re_pattern = re.compile(pattern)
+            doc_ids = set()
+            match_score = None
+            for tok in self.positional_index.keys():
+                if re_pattern.fullmatch(tok):
+                    sub_query_result = self._eval_query(TermQuery(term=terms[0]), score)
+                    doc_ids.update(sub_query_result.doc_ids)
+
+                    if score:
+                        if not match_score:
+                            match_score = sub_query_result.match_score
+
+                        else:
+                            for (
+                                d_id,
+                                sub_q_match_score,
+                            ) in sub_query_result.match_score.items():
+                                match_score[d_id] = (
+                                    match_score.get(d_id, 0) + sub_q_match_score
+                                )
+            query_result = QueryResult(doc_ids=doc_ids, match_score=match_score)
         else:
             raise ValueError("Invalid Query type")
 
