@@ -12,7 +12,7 @@ import argparse
 from pathlib import Path
 
 # sample of project gutenberg books
-DATA_PATH = "/Users/kimili/Downloads/gutenberg"
+DATA_PATH = ""
 
 
 def load_corpus(n):
