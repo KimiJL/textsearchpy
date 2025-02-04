@@ -1,12 +1,18 @@
 from benchmark_utils import create_index_from_data, print_memory_usage, evaluate_queries
-from textsearchpy.query import TermQuery, BooleanQuery, BooleanClause, PhraseQuery
+from textsearchpy.query import (
+    TermQuery,
+    BooleanQuery,
+    BooleanClause,
+    PhraseQuery,
+    WildcardQuery,
+)
 from os import listdir
 from os.path import isfile, join, isdir
 import argparse
 from pathlib import Path
 
 # sample of project gutenberg books
-DATA_PATH = ""
+DATA_PATH = "/Users/kimili/Downloads/gutenberg"
 
 
 def load_corpus(n):
@@ -95,6 +101,10 @@ def run():
             PhraseQuery(terms=["through", "crowd"], distance=10, ordered=False),
             PhraseQuery(terms=["day", "sunlight"], distance=10, ordered=False),
         ],
+    )
+
+    evaluate_queries(
+        index=index, queries=[WildcardQuery(term="s?t"), WildcardQuery(term="in*e")]
     )
 
 

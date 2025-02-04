@@ -165,4 +165,4 @@ calculated as the average latency of few different preset queries
 | dataset  | TermQuery | BooleanQuery | PhraseQuery | WildcardQuery |
 | -------- | ------- | ------- | ------- | ------- | 
 | Reuters  | 0.08ms   | 0.11ms | 0.06ms | 8.46 ms |
-| Gutenberg| 0.07ms    | 0.10ms | 55ms | TODO |
+| Gutenberg| 0.07ms    | 0.10ms | 55ms | 104.6 ms |
