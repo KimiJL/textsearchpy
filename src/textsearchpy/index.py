@@ -19,14 +19,7 @@ from .query import (
     WildcardQuery,
     parse_query,
 )
-
-
-class IndexSearchError(Exception):
-    pass
-
-
-class IndexingError(Exception):
-    pass
+from .exception import TextSearchPyError, IndexingError
 
 
 class Document(BaseModel):
@@ -171,7 +164,7 @@ class Index:
 
     def delete(self, docs: List[Document] = None, ids: List[str] = None) -> int:
         if docs is None and ids is None:
-            raise Exception("docs or ids required to delete from index")
+            raise TextSearchPyError("docs or ids required to delete from index")
 
         ids_to_delete = []
         if docs:
@@ -214,15 +207,15 @@ class Index:
             Path(path).mkdir(parents=True, exist_ok=True)
 
         if not os.path.isdir(path):
-            raise Exception(f"input path: {path} should be a folder")
+            raise TextSearchPyError(f"save path: {path} should be a folder")
 
         document_file_path = os.path.join(path, "docs.jsonl")
         index_file_path = os.path.join(path, "index.json")
 
         if os.path.exists(document_file_path):
-            raise Exception(f"{document_file_path} already exists")
+            raise TextSearchPyError(f"{document_file_path} already exists")
         if os.path.exists(index_file_path):
-            raise Exception(f"{index_file_path} already exists")
+            raise TextSearchPyError(f"{index_file_path} already exists")
 
         with open(document_file_path, "w") as doc_file:
             for d in self.documents.values():
@@ -244,7 +237,7 @@ class Index:
 
     def load_from_file(self, path: str) -> bool:
         if not os.path.exists(path) or not os.path.isdir(path):
-            raise Exception(f"{path} must be a existing folder")
+            raise TextSearchPyError(f"{path} directory not found")
 
         document_file_path = os.path.join(path, "docs.jsonl")
         index_file_path = os.path.join(path, "index.json")
