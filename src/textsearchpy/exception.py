@@ -7,4 +7,16 @@ class TextSearchPyError(Exception):
 
 
 class IndexingError(TextSearchPyError):
+    """
+    Error during appending of text to index
+    """
+
+    pass
+
+
+class QueryParseError(Exception):
+    """
+    Error parsing query string into valid Query object
+    """
+
     pass
