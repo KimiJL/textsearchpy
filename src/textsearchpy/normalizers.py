@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+from .exception import TextSearchPyError
 
 
 class TokenNormalizer(ABC):
@@ -19,7 +20,7 @@ class StopwordsNormalizer(TokenNormalizer):
         super().__init__()
         if stopwords is not None:
             if not isinstance(stopwords, list):
-                raise Exception(
+                raise TextSearchPyError(
                     "StopwordsNormalizer custom stopwords must be a list of string"
                 )
 

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List
 from pydantic import BaseModel
+from .exception import QueryParseError
 
 
 class Query(BaseModel, ABC):
@@ -73,10 +74,6 @@ class WildcardQuery(Query):
 
     def to_query_string(self) -> str:
         return f"{self.term}"
-
-
-class QueryParseError(Exception):
-    pass
 
 
 RESERVED_KEY_CHAR = set(["(", ")", '"'])
