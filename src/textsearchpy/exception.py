@@ -14,7 +14,7 @@ class IndexingError(TextSearchPyError):
     pass
 
 
-class QueryParseError(Exception):
+class QueryParseError(TextSearchPyError):
     """
     Error parsing query string into valid Query object
     """
