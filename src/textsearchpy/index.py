@@ -7,6 +7,7 @@ import uuid
 import os
 import math
 from queue import PriorityQueue
+import importlib.metadata
 
 from .tokenizers import SimpleTokenizer, Tokenizer
 from .normalizers import TokenNormalizer, LowerCaseNormalizer
@@ -212,6 +213,9 @@ class Index:
         document_file_path = os.path.join(path, "docs.jsonl")
         index_file_path = os.path.join(path, "index.json")
 
+        # fetch the version of the package
+        version_string = importlib.metadata.version("textsearchpy")
+
         if os.path.exists(document_file_path):
             raise TextSearchPyError(f"{document_file_path} already exists")
         if os.path.exists(index_file_path):
@@ -224,6 +228,7 @@ class Index:
 
         with open(index_file_path, "w") as index_file:
             file_body = {
+                "version": version_string,
                 "token_normalizers": [
                     t.__class__.__name__ for t in self.token_normalizers
                 ],
