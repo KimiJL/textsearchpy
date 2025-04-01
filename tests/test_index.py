@@ -382,13 +382,17 @@ def test_query_with_filtered_tokens():
     assert len(docs) == 1
 
 
-def test_index_save_load(tmp_path):
+def test_index_save_load(tmp_path, mocker):
     index = Index()
     doc1 = Document(text="you like cookie")
     doc2 = Document(text="we like cake")
     index.append([doc1, doc2])
 
     save_path = str(tmp_path / "test_save")
+
+    mock_version_number = "1.0.0"
+
+    mocker.patch("importlib.metadata.version", return_value=mock_version_number)
     index.save(path=save_path)
 
     index_file = os.path.join(save_path, "index.json")
@@ -403,6 +407,7 @@ def test_index_save_load(tmp_path):
     assert saved_index_file["tokenizer"] == "SimpleTokenizer"
     assert len(saved_index_file["inverted_index"]) == 5
     assert len(saved_index_file["positional_index"]) == 5
+    assert saved_index_file["version"] == mock_version_number
 
     saved_docs = []
     with open(doc_file, "r") as f:
